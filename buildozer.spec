@@ -8,7 +8,7 @@ source.exclude_dirs = tests,.github,bin,.buildozer
 version = 1.0.0
 
 # pygments rəngləmə üçün, certifi HTTPS yoxlaması üçün lazımdır
-requirements = python3,kivy==2.3.0,pygments,certifi
+requirements = python3,kivy==2.3.2,pygments,certifi
 
 orientation = portrait
 fullscreen = 0
