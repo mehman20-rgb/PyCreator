@@ -36,7 +36,40 @@ jobs:
           restore-keys: buildozer-
 
       - name: APK qur
-        run: buildozer -v android debug
+        run: |
+          set -o pipefail
+          buildozer -v android debug 2>&1 | tee build.log
+
+      - name: Xəta xülasəsi
+        if: failure()
+        run: |
+          set +e +o pipefail
+          sed -i 's/\x1b\[[0-9;]*[A-Za-z]//g' build.log
+          n=$(grep -n "Command failed" build.log | tail -1 | cut -d: -f1)
+          {
+            echo "## Xəta xülasəsi"
+            echo
+            echo "### Xəta sözləri olan sətirlər"
+            echo '```'
+            grep -n -i -E "error|failed|traceback|no matching|not found|fatal" build.log \
+              | grep -v -E "Error code|Command failed|ENVIRONMENT|raising an issue|error might|Error: Process" \
+              | tail -25 | cut -c1-250
+            echo '```'
+            if [ -n "$n" ]; then
+              start=$(( n > 70 ? n - 70 : 1 ))
+              echo "### Command failed sətrindən əvvəlki 70 sətir"
+              echo '```'
+              sed -n "${start},${n}p" build.log | cut -c1-250
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Tam logu saxla (xəta olanda)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: APK-nı yüklə
         uses: actions/upload-artifact@v4
