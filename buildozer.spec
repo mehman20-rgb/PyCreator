@@ -9,7 +9,7 @@ version = 1.0.0
 
 # pygments rəngləmə üçün, certifi HTTPS yoxlaması üçün lazımdır
 requirements = python3,kivy==2.3.2,pygments,certifi
-
+p4a.branch = develop
 orientation = portrait
 fullscreen = 0
 
