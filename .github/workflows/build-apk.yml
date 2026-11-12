@@ -32,8 +32,8 @@ jobs:
           path: |
             ~/.buildozer
             .buildozer
-          key: buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: buildozer-
+          key: buildozer-${{ hashFiles('buildozer.spec','.github/workflows/build-apk.yml') }}
+        
 
       - name: APK qur
         run: |
