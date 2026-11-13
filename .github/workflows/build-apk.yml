@@ -52,11 +52,11 @@ jobs:
 
       - name: İstifadəçi ikonunu Buildozer-ə qoş
         run: |
-          if [ -f Assets/app_icon.png ]; then
+          if [ -f Assets/app_icon.jpg ]; then
             sed -i '/^version = /a icon.filename = %(source.dir)s/Assets/app_icon.jpg' buildozer.spec
             echo "PyCreator ikon faylı Buildozer konfiqurasiyasına əlavə edildi."
           else
-            echo "::notice::Assets/app_icon.png tapılmadı; standart tətbiq ikonu ilə davam edilir."
+            echo "::notice::Assets/app_icon.jpg tapılmadı; standart tətbiq ikonu ilə davam edilir."
           fi
 
       - name: APK qur
