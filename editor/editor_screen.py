@@ -108,7 +108,7 @@ class EditorScreen(BoxLayout):
         self.add_widget(self.turtle_canvas)
 
         self.code = _make_code_box()
-        self.code.size_hint_y = 0.58
+        self.code.size_hint_y = 1
         self.add_widget(self.code)
 
         # Nəticə konsolu ayrıca tam ekran Runner səhifəsində göstərilir.
@@ -150,12 +150,10 @@ class EditorScreen(BoxLayout):
         if self._uses_turtle:
             turtle_api.reset()
             self.turtle_canvas.height = dp(170)
-            self.code.size_hint_y = 0.48
-            self.console.size_hint_y = 0.32
+            self.code.size_hint_y = 1
         else:
             self.turtle_canvas.height = 0
-            self.code.size_hint_y = 0.58
-            self.console.size_hint_y = 0.42
+            self.code.size_hint_y = 1
         self._set_running(True)
         if hasattr(self, "show_runner"):
             self.show_runner()
