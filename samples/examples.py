@@ -18,6 +18,23 @@ print("Hasil:", a * b)
 if b != 0:
     print("Bölmə:", a / b)
 ''',
+    "opencv_test.py": '''# OpenCV Android APK buildinə daxil edildikdən sonra işləyəcək
+import cv2
+import numpy as np
+
+# Süni test şəkli yarat
+image = np.zeros((240, 320, 3), dtype=np.uint8)
+image[50:190, 80:240] = (255, 255, 255)
+
+# Boz rəng və kənar aşkarlanması
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+edges = cv2.Canny(gray, 50, 150)
+
+print("OpenCV:", cv2.__version__)
+print("Şəkil ölçüsü:", image.shape)
+print("Boz şəkil:", gray.shape)
+print("Kənar piksel sayı:", cv2.countNonZero(edges))
+''',
     "sorgu_requests.py": '''# Bu nümunə üçün əvvəlcə "Kitabxanalar" bölməsindən requests quraşdır
 import requests
 
