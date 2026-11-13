@@ -51,11 +51,13 @@ class CodeBox(_AutoIndent, _BASE):
 
 
 def _make_code_box():
-    kw = dict(font_name=MONO, font_size=sp(14), do_wrap=False, cursor_color=ACCENT)
+    # Tünd göy redaktor fonu; sintaksis rəngləri olduğu kimi saxlanılır.
+    kw = dict(font_name=MONO, font_size=sp(14), do_wrap=False, cursor_color=ACCENT,
+              background_color=(0.025, 0.04, 0.075, 1))
     if _HIGHLIGHT:
         kw.update(lexer=PythonLexer(), style_name="monokai")
     else:
-        kw.update(background_color=PANEL, foreground_color=TEXT)
+        kw.update(foreground_color=TEXT)
     return CodeBox(**kw)
 
 
