@@ -10,7 +10,7 @@ version = 1.0.0
 # GitHub Actions həmin fayl olduqda icon.filename parametrini avtomatik aktivləşdirir.
 
 # pygments rəngləmə, certifi HTTPS yoxlaması üçün lazımdır
-requirements = python3,kivy==2.3.2,pygments,certifi
+requirements = python3,kivy==2.3.2,pygments,certifi,qrcode
 p4a.branch = develop
 orientation = portrait
 fullscreen = 0
