@@ -11,7 +11,7 @@ from kivy.uix.screenmanager import NoTransition, Screen, ScreenManager
 from ui import theme
 from ui.theme import ACCENT, BG, PANEL2, Btn
 
-TABS = [("editor", "Redaktor"), ("libs", "Kitabxanalar"), ("files", "Fayllar")]
+TABS = [("editor", "Redaktor"), ("qr", "QR Code"), ("libs", "Kitabxanalar"), ("files", "Fayllar")]
 
 
 class PyCreatorApp(App):
@@ -27,6 +27,7 @@ class PyCreatorApp(App):
         from editor.editor_screen import EditorScreen
         from files.files_screen import FilesScreen
         from packages.libs_screen import LibsScreen
+        from tools.qr_screen import QRCodeScreen
 
         data_dir = self.user_data_dir
         self.code_dir = self._prepare_code_dir(data_dir)
@@ -36,10 +37,11 @@ class PyCreatorApp(App):
 
         self.editor = EditorScreen(data_dir, self.code_dir)
         self.libs = LibsScreen(site_dir)
+        self.qr = QRCodeScreen()
         self.files = FilesScreen(self.code_dir, self._open_from_files, self.editor.forget)
 
         self.sm = ScreenManager(transition=NoTransition())
-        for name, widget in (("editor", self.editor), ("libs", self.libs), ("files", self.files)):
+        for name, widget in (("editor", self.editor), ("qr", self.qr), ("libs", self.libs), ("files", self.files)):
             screen = Screen(name=name)
             screen.add_widget(widget)
             self.sm.add_widget(screen)
