@@ -1,5 +1,4 @@
-
-name: APK qur
+name: PyCreator Android APK və Release
 
 on:
   push:
@@ -41,6 +40,15 @@ jobs:
             .buildozer
           key: buildozer-${{ hashFiles('buildozer.spec','.github/workflows/build-apk.yml') }}
 
+      - name: İstifadəçi ikonunu Buildozer-ə qoş
+        run: |
+          if [ -f Assets/app_icon.png ]; then
+            sed -i '/^version = /a icon.filename = %(source.dir)s/Assets/app_icon.png' buildozer.spec
+            echo "PyCreator ikon faylı Buildozer konfiqurasiyasına əlavə edildi."
+          else
+            echo "::notice::Assets/app_icon.png tapılmadı; standart tətbiq ikonu ilə davam edilir."
+          fi
+
       - name: APK qur
         run: |
           set -o pipefail
@@ -68,7 +76,15 @@ jobs:
           name: build-log
           path: build.log
 
-      - name: APK fayllarını Release üçün adlandır
+      - name: APK Artifact yüklə
+        if: success() && !startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: PyCreator-apk
+          path: bin/*.apk
+          if-no-files-found: error
+
+      - name: Release APK fayllarını hazırla
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mkdir -p release
@@ -88,6 +104,7 @@ jobs:
               cp "$f" "release/PyCreator-${GITHUB_REF_NAME}.apk"
             fi
           done
+          sha256sum release/*.apk > release/SHA256SUMS.txt
 
       - name: GitHub Release yarat və APK əlavə et
         if: startsWith(github.ref, 'refs/tags/v')
@@ -95,4 +112,4 @@ jobs:
         with:
           name: PyCreator ${{ github.ref_name }}
           generate_release_notes: true
-          files: release/*.apk
+          files: release/*
