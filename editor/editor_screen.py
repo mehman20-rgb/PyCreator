@@ -81,18 +81,23 @@ class EditorScreen(BoxLayout):
 
     # ---------- quruluş ----------
     def _build(self):
-        bar = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(6))
-        self.run_btn = Btn("▶ İşlət", base=GREEN)
-        self.stop_btn = Btn("■ Dayan", base=RED, disabled=True)
-        new_btn = Btn("Yeni")
-        save_btn = Btn("Saxla")
+        top = BoxLayout(size_hint_y=None, height=dp(42))
+        top.add_widget(BoxLayout())
+        controls = BoxLayout(size_hint_x=None, width=dp(154), spacing=dp(4),
+                             padding=dp(3))
+        controls.canvas.before.clear()
+        self.run_btn = Btn("▶", base=GREEN, size_hint_x=None, width=dp(38))
+        self.stop_btn = Btn("■", base=RED, disabled=True, size_hint_x=None, width=dp(38))
+        new_btn = Btn("+", size_hint_x=None, width=dp(34))
+        save_btn = Btn("▣", size_hint_x=None, width=dp(34))
         self.run_btn.bind(on_release=lambda *_: self.run())
         self.stop_btn.bind(on_release=lambda *_: self.runner.stop())
         new_btn.bind(on_release=lambda *_: self.new_file())
         save_btn.bind(on_release=lambda *_: self.save())
         for b in (self.run_btn, self.stop_btn, new_btn, save_btn):
-            bar.add_widget(b)
-        self.add_widget(bar)
+            controls.add_widget(b)
+        top.add_widget(controls)
+        self.add_widget(top)
 
         self.title = make_label("", size=13, color=MUTED, height=22)
         self.add_widget(self.title)
@@ -106,32 +111,16 @@ class EditorScreen(BoxLayout):
         self.code.size_hint_y = 0.58
         self.add_widget(self.code)
 
-        head = BoxLayout(size_hint_y=None, height=dp(36), spacing=dp(6))
-        head.add_widget(make_label("Nəticə", size=14, bold=True, height=36))
-        copy_btn = Btn("Kopyala", base=PANEL2, size_hint_x=None, width=dp(96), height=dp(34))
-        clear_btn = Btn("Təmizlə", base=PANEL2, size_hint_x=None, width=dp(96), height=dp(34))
-        copy_btn.bind(on_release=lambda *_: Clipboard.copy(self.console.text))
-        clear_btn.bind(on_release=lambda *_: setattr(self.console, "text", ""))
-        head.add_widget(copy_btn)
-        head.add_widget(clear_btn)
-        self.add_widget(head)
-
+        # Nəticə konsolu ayrıca tam ekran Runner səhifəsində göstərilir.
         self.console = TextInput(
-            readonly=True, font_name=MONO, font_size=sp(13), size_hint_y=0.42,
-            background_color=(0.03, 0.04, 0.05, 1), foreground_color=(0.78, 0.96, 0.82, 1),
+            readonly=True, font_name=MONO, font_size=sp(13),
+            background_color=(0, 0, 0, 1), foreground_color=(0.78, 0.96, 0.82, 1),
             cursor_color=(0, 0, 0, 0))
-        self.add_widget(self.console)
-
         self.input_row = BoxLayout(size_hint_y=None, height=0, opacity=0,
                                    disabled=True, spacing=dp(6))
         self.input_field = TextInput(multiline=False, hint_text="Cavabını yaz və Göndər",
                                      font_name=MONO, font_size=sp(15), write_tab=False)
-        send = Btn("Göndər", base=ACCENT, size_hint_x=None, width=dp(100))
-        self.input_field.bind(on_text_validate=lambda *_: self._send_input())
-        send.bind(on_release=lambda *_: self._send_input())
         self.input_row.add_widget(self.input_field)
-        self.input_row.add_widget(send)
-        self.add_widget(self.input_row)
 
     def _build_symbols(self):
         scroll = ScrollView(size_hint_y=None, height=dp(40), do_scroll_y=False, bar_width=0)
@@ -168,6 +157,8 @@ class EditorScreen(BoxLayout):
             self.code.size_hint_y = 0.58
             self.console.size_hint_y = 0.42
         self._set_running(True)
+        if hasattr(self, "show_runner"):
+            self.show_runner()
         self.runner.start(source, self.name or "adsiz")
 
     def _set_running(self, running):
@@ -181,6 +172,8 @@ class EditorScreen(BoxLayout):
         self.input_row.opacity = 1
         self.input_row.disabled = False
         self.input_field.text = ""
+        if hasattr(self, "show_runner"):
+            self.show_runner()
         Clock.schedule_once(lambda _dt: setattr(self.input_field, "focus", True), 0.1)
 
     def _hide_input(self):
