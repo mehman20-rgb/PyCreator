@@ -20,7 +20,7 @@ MONO = "Mono"
 
 def register_fonts(base_dir):
     """Azərbaycan hərfləri (ə, ı, ş, ç, ğ, ö, ü) üçün DejaVu şriftini əsas şrift edir."""
-    a = os.path.join(base_dir, "assets")
+    a = os.path.join(base_dir, "Assets")
     LabelBase.register(
         name="Roboto",
         fn_regular=os.path.join(a, "DejaVuSans.ttf"),
