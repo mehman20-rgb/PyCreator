@@ -2,7 +2,7 @@
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 
-from ui.theme import ACCENT, MUTED, Btn, make_label
+from ui.theme import ACCENT, MUTED, PANEL2, Btn, make_label
 
 
 class HomeScreen(BoxLayout):
@@ -18,7 +18,7 @@ class HomeScreen(BoxLayout):
             ("Redaktoru aç", on_editor), ("Layihələr", on_projects),
             ("Kitabxanalar", on_packages), ("Tənzimləmələr", on_settings)
         ):
-            button=Btn(title, base=ACCENT if title=="Redaktoru aç" else None)
+            button=Btn(title, base=ACCENT if title=="Redaktoru aç" else PANEL2)
             if callback:
                 button.bind(on_release=lambda _button, fn=callback: fn())
             self.add_widget(button)
