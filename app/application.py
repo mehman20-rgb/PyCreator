@@ -25,6 +25,7 @@ class PyCreatorApp(App):
 
         # Importlar şrift qeydiyyatından sonra edilir ki, bütün vidjetlər DejaVu istifadə etsin.
         from editor.editor_screen import EditorScreen
+        from editor.runner_screen import RunnerScreen
         from files.files_screen import FilesScreen
         from packages.libs_screen import LibsScreen
         from tools.qr_screen import QRCodeScreen
@@ -36,12 +37,14 @@ class PyCreatorApp(App):
         self._seed_examples(data_dir)
 
         self.editor = EditorScreen(data_dir, self.code_dir)
+        self.runner_page = RunnerScreen(self.editor, lambda: self.switch("editor"))
+        self.editor.show_runner = lambda: self.switch("runner")
         self.libs = LibsScreen(site_dir)
         self.qr = QRCodeScreen()
         self.files = FilesScreen(self.code_dir, self._open_from_files, self.editor.forget)
 
         self.sm = ScreenManager(transition=NoTransition())
-        for name, widget in (("editor", self.editor), ("qr", self.qr), ("libs", self.libs), ("files", self.files)):
+        for name, widget in (("editor", self.editor), ("runner", self.runner_page), ("qr", self.qr), ("libs", self.libs), ("files", self.files)):
             screen = Screen(name=name)
             screen.add_widget(widget)
             self.sm.add_widget(screen)
@@ -49,6 +52,7 @@ class PyCreatorApp(App):
         root = BoxLayout(orientation="vertical")
         root.add_widget(self.sm)
         nav = BoxLayout(size_hint_y=None, height=dp(52), spacing=dp(2))
+        self.nav = nav
         self.tab_buttons = {}
         for name, label in TABS:
             b = Btn(label, base=PANEL2, height=dp(52))
@@ -106,6 +110,9 @@ class PyCreatorApp(App):
     # ---------- naviqasiya ----------
     def switch(self, name):
         self.sm.current = name
+        self.nav.height = 0 if name == "runner" else dp(52)
+        self.nav.opacity = 0 if name == "runner" else 1
+        self.nav.disabled = name == "runner"
         for tab, button in self.tab_buttons.items():
             button.base = ACCENT if tab == name else PANEL2
             button.background_color = button.base
