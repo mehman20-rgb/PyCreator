@@ -1,14 +1,21 @@
+
 name: APK qur
 
 on:
   push:
     branches: [main]
+    tags:
+      - "v*"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +26,7 @@ jobs:
       - name: Sistem asılılıqlarını quraşdır
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool libltdl-dev  pkg-config \
+          sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool libltdl-dev pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev \
             automake autopoint gettext
 
@@ -33,7 +40,6 @@ jobs:
             ~/.buildozer
             .buildozer
           key: buildozer-${{ hashFiles('buildozer.spec','.github/workflows/build-apk.yml') }}
-        
 
       - name: APK qur
         run: |
@@ -48,32 +54,45 @@ jobs:
           n=$(grep -n "Command failed" build.log | tail -1 | cut -d: -f1)
           {
             echo "## Xəta xülasəsi"
-            echo
-            echo "### Xəta sözləri olan sətirlər"
-            echo '```'
-            grep -n -i -E "error|failed|traceback|no matching|not found|fatal" build.log \
-              | grep -v -E "Error code|Command failed|ENVIRONMENT|raising an issue|error might|Error: Process" \
-              | tail -25 | cut -c1-250
-            echo '```'
+            grep -n -i -E "error|failed|traceback|not found|fatal" build.log | tail -25
             if [ -n "$n" ]; then
               start=$(( n > 70 ? n - 70 : 1 ))
-              echo "### Command failed sətrindən əvvəlki 70 sətir"
-              echo '```'
-              sed -n "${start},${n}p" build.log | cut -c1-250
-              echo '```'
+              sed -n "${start},${n}p" build.log
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Tam logu saxla (xəta olanda)
+      - name: Tam logu saxla
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: build-log
           path: build.log
 
-      - name: APK-nı yüklə
-        uses: actions/upload-artifact@v4
+      - name: APK fayllarını Release üçün adlandır
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          mkdir -p release
+          shopt -s nullglob
+          files=(bin/*.apk)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "APK tapılmadı"
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            name=$(basename "$f")
+            if [[ "$name" == *arm64-v8a* ]]; then
+              cp "$f" "release/PyCreator-${GITHUB_REF_NAME}-arm64-v8a.apk"
+            elif [[ "$name" == *armeabi-v7a* ]]; then
+              cp "$f" "release/PyCreator-${GITHUB_REF_NAME}-armeabi-v7a.apk"
+            else
+              cp "$f" "release/PyCreator-${GITHUB_REF_NAME}.apk"
+            fi
+          done
+
+      - name: GitHub Release yarat və APK əlavə et
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
         with:
-          name: PyCreator-apk
-          path: bin/*.apk
-          if-no-files-found: error
+          name: PyCreator ${{ github.ref_name }}
+          generate_release_notes: true
+          files: release/*.apk
