@@ -19,7 +19,7 @@ def drain_commands(limit=5000):
     return items
 
 
-def reset():
+def reset_canvas():
     while True:
         try:
             _commands.get_nowait()
@@ -214,7 +214,8 @@ class _Screen:
         _emit("clear", None)
 
     def reset(self):
-        reset()
+        reset_canvas()
+        _default.reset()
 
     def title(self, *_args):
         return None
@@ -299,5 +300,15 @@ def distance(x, y=None): return _default.distance(x, y)
 def circle(radius, extent=360, steps=None): return _default.circle(radius, extent, steps)
 def dot(size=6, *color): return _default.dot(size, *color)
 def clear(): return _default.clear()
-def reset_turtle(): return _default.reset()
+def reset():
+    reset_canvas()
+    return _default.reset()
+def bgcolor(color=None): return _screen.bgcolor(color)
+def clearscreen(): return _screen.clearscreen()
+def title(value): return _screen.title(value)
+def setup(*args, **kwargs): return _screen.setup(*args, **kwargs)
+def tracer(*args, **kwargs): return _screen.tracer(*args, **kwargs)
+def update(): return _screen.update()
+def bye(): return _screen.bye()
+def reset_turtle(): return reset()
 def stamp(): return _default.stamp()
