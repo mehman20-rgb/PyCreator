@@ -159,7 +159,7 @@ class EditorScreen(BoxLayout):
         source = self.code.text
         self._uses_turtle = ("import turtle" in source or "from turtle import" in source)
         if self._uses_turtle:
-            turtle_api.reset()
+            turtle_api.reset_canvas()
             self.turtle_canvas.height = dp(170)
             self.code.size_hint_y = 0.48
             self.console.size_hint_y = 0.32
