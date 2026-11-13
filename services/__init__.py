@@ -1,0 +1,1 @@
+"""Tətbiq səviyyəli xidmətlər."""
