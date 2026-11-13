@@ -119,8 +119,8 @@ class Turtle:
                      "orange": (1,0.45,0.05,1), "purple": (0.65,0.25,0.9,1),
                      "cyan": (0,0.9,0.9,1), "pink": (1,0.35,0.65,1)}
             self._color = names.get(color.lower(), self._color)
-        elif isinstance(color, (tuple, list)):
-            vals = tuple(float(v) for v in color)
+        elif isinstance(color, (tuple, list)) or len(color) == 3:
+            vals = tuple(float(v) for v in (color if isinstance(color, (tuple, list)) else color))
             if max(vals) > 1:
                 vals = tuple(v / 255 for v in vals)
             self._color = vals[:3] + (1,)
@@ -238,6 +238,17 @@ class _Screen:
 
 _default = Turtle()
 _screen = _Screen()
+
+__all__ = [
+    "Turtle", "Screen", "getscreen", "TurtleScreen", "done", "mainloop",
+    "forward", "fd", "backward", "back", "bk", "left", "lt", "right", "rt",
+    "goto", "setpos", "setposition", "setheading", "seth", "penup", "pu",
+    "up", "pendown", "pd", "down", "isdown", "color", "pencolor", "pensize",
+    "width", "speed", "hideturtle", "ht", "showturtle", "st", "home",
+    "position", "pos", "xcor", "ycor", "heading", "distance", "circle",
+    "dot", "clear", "reset", "bgcolor", "clearscreen", "title", "setup",
+    "tracer", "update", "bye", "stamp",
+]
 
 
 def Screen():
