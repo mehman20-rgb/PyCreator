@@ -1,0 +1,1 @@
+"""PyCreator əsas UI ekranları."""
