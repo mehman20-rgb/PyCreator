@@ -1,0 +1,1 @@
+"""PyCreator nümunə proqramları."""
