@@ -12,6 +12,8 @@ from kivy.uix.textinput import TextInput
 
 from ui import dialogs
 from core.runner import Runner
+from editor.turtle_canvas import TurtleCanvas
+from tools import turtle_api
 from ui.theme import ACCENT, GREEN, MONO, MUTED, PANEL, PANEL2, RED, TEXT, Btn, make_label
 
 try:
@@ -97,6 +99,9 @@ class EditorScreen(BoxLayout):
 
         self.add_widget(self._build_symbols())
 
+        self.turtle_canvas = TurtleCanvas(size_hint_y=None, height=0)
+        self.add_widget(self.turtle_canvas)
+
         self.code = _make_code_box()
         self.code.size_hint_y = 0.58
         self.add_widget(self.code)
@@ -151,8 +156,19 @@ class EditorScreen(BoxLayout):
             return
         self.persist()
         self.console.text = ""
+        source = self.code.text
+        self._uses_turtle = ("import turtle" in source or "from turtle import" in source)
+        if self._uses_turtle:
+            turtle_api.reset()
+            self.turtle_canvas.height = dp(170)
+            self.code.size_hint_y = 0.48
+            self.console.size_hint_y = 0.32
+        else:
+            self.turtle_canvas.height = 0
+            self.code.size_hint_y = 0.58
+            self.console.size_hint_y = 0.42
         self._set_running(True)
-        self.runner.start(self.code.text, self.name or "adsiz")
+        self.runner.start(source, self.name or "adsiz")
 
     def _set_running(self, running):
         self.run_btn.disabled = running
@@ -196,6 +212,8 @@ class EditorScreen(BoxLayout):
                 self._flush(chunks)
                 self._finish(item[1], item[2])
         self._flush(chunks)
+        for command in turtle_api.drain_commands():
+            self.turtle_canvas.apply(command)
 
     def _flush(self, chunks):
         if chunks:
