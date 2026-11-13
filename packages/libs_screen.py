@@ -44,7 +44,7 @@ class LibsScreen(BoxLayout):
         self.add_widget(make_label(
             "Kitabxana adını yaz (bir neçə ad üçün boşluq və ya vergül işlət). "
             "Python-un hazır modulları (os, json, math, random...) quraşdırma tələb etmir. "
-            "numpy/pandas kimi C kodlu kitabxanalar bu üsulla işləmir.",
+            "numpy və opencv Android üçün APK build zamanı əlavə olunur; onları bu ekrandan pip ilə quraşdırma.",
             size=13, color=MUTED))
 
         row = BoxLayout(size_hint_y=None, height=dp(70), spacing=dp(6))
