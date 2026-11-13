@@ -18,7 +18,8 @@ class PyCreatorApp(App):
     title = "PyCreator"
 
     def build(self):
-        theme.register_fonts(os.path.dirname(os.path.abspath(__file__)))
+        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        theme.register_fonts(project_dir)
         Window.clearcolor = BG
         Window.softinput_mode = "resize"
 
