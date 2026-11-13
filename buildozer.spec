@@ -6,8 +6,10 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf
 source.exclude_dirs = tests,.github,bin,.buildozer
 version = 1.0.0
+# İkon seçildikdən sonra Assets/app_icon.png adı ilə əlavə et.
+# GitHub Actions həmin fayl olduqda icon.filename parametrini avtomatik aktivləşdirir.
 
-# pygments rəngləmə üçün, certifi HTTPS yoxlaması üçün lazımdır
+# pygments rəngləmə, certifi HTTPS yoxlaması üçün lazımdır
 requirements = python3,kivy==2.3.2,pygments,certifi
 p4a.branch = develop
 orientation = portrait
