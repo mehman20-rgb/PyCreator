@@ -44,16 +44,19 @@ class ThreeDView(Widget):
                     pts=[self.project(p3[i]) for i in face]
                     depth=sum(p3[i][2] for i in face)/4
                     rendered.append((depth,pts,obj["color"]))
-                Color(.8,.9,1,.9)
-                for a,b in self.edges:
-                    p,q=self.project(p3[a]),self.project(p3[b])
-                    Line(points=[p[0],p[1],q[0],q[1]],width=1.2)
-            rendered.sort(key=lambda item:item[0])
+            rendered.sort(key=lambda item:item[0], reverse=True)
             for depth,pts,rgb in rendered:
                 shade=max(.35,min(1.0,.75+depth*.05))
                 Color(*(min(1,c*shade) for c in rgb),1)
                 Triangle(points=[pts[0][0],pts[0][1],pts[1][0],pts[1][1],pts[2][0],pts[2][1]])
                 Triangle(points=[pts[0][0],pts[0][1],pts[2][0],pts[2][1],pts[3][0],pts[3][1]])
+            # Kənarları üzlərin üstündən çək.
+            for obj in objects:
+                p3=[self.transform(v,rotation,obj["position"],obj["size"]) for v in self.verts]
+                Color(.8,.9,1,.95)
+                for a,b in self.edges:
+                    p,q=self.project(p3[a]),self.project(p3[b])
+                    Line(points=[p[0],p[1],q[0],q[1]],width=1.2)
 
 class ThreeDScreen(BoxLayout):
     def __init__(self,**kw):
