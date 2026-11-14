@@ -6,7 +6,6 @@ import shutil
 class StorageManager:
     def __init__(self, data_dir):
         self.data_dir = data_dir
-        self._activity = None
 
     def _android(self):
         try:
@@ -32,10 +31,16 @@ class StorageManager:
         if activity is None:
             return False
         try:
-            env = autoclass("android.os.Environment")
-            if env.getSdkInt() >= 30:
+            Build = autoclass("android.os.Build")
+            if Build.VERSION.SDK_INT >= 30:
+                env = autoclass("android.os.Environment")
                 return bool(env.isExternalStorageManager())
-            return bool(env.getExternalStorageState() == env.MEDIA_MOUNTED)
+            PackageManager = autoclass("android.content.pm.PackageManager")
+            read_ok = activity.checkSelfPermission(
+                "android.permission.READ_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED
+            write_ok = activity.checkSelfPermission(
+                "android.permission.WRITE_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED
+            return bool(read_ok and write_ok)
         except Exception:
             return False
 
@@ -44,8 +49,8 @@ class StorageManager:
         if activity is None:
             return False
         try:
-            env = autoclass("android.os.Environment")
-            if env.getSdkInt() >= 30:
+            Build = autoclass("android.os.Build")
+            if Build.VERSION.SDK_INT >= 30:
                 Intent = autoclass("android.content.Intent")
                 Settings = autoclass("android.provider.Settings")
                 Uri = autoclass("android.net.Uri")
@@ -53,16 +58,15 @@ class StorageManager:
                 intent.setData(Uri.parse("package:" + activity.getPackageName()))
                 activity.startActivity(intent)
             else:
-                Manifest = autoclass("android.Manifest")
                 activity.requestPermissions(
-                    [Manifest.permission.READ_EXTERNAL_STORAGE,
-                     Manifest.permission.WRITE_EXTERNAL_STORAGE], 4102)
+                    ["android.permission.READ_EXTERNAL_STORAGE",
+                     "android.permission.WRITE_EXTERNAL_STORAGE"], 4102)
             return True
         except Exception:
             return False
 
     def prepare(self, old_dir=None):
-        """İcazə varsa Download/PyProjects, yoxdursa tətbiqin öz yaddaşı."""
+        """İcazə varsa Download/PyProjects, yoxdursa tətbiqin daxili yaddaşı."""
         public_dir = self.public_projects_dir()
         if public_dir and self.has_access():
             try:
