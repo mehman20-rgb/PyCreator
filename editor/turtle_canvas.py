@@ -1,9 +1,9 @@
-"""Turtle üçün ağ kətan; əmrləri növbə ilə çəkir və xüsusi JPG ikonunu göstərə bilir."""
+"""Turtle üçün ağ kətan; hərəkəti ardıcıl göstərir və Assets/turtle.jpg ikonunu dəstəkləyir."""
 import os
+from kivy.core.image import Image as CoreImage
 from kivy.graphics import Color, Ellipse, Line, Rectangle, PushMatrix, PopMatrix, Rotate
 from kivy.metrics import dp
 from kivy.uix.widget import Widget
-from kivy.uix.image import Image
 
 
 class TurtleCanvas(Widget):
@@ -12,17 +12,13 @@ class TurtleCanvas(Widget):
         self.items = []
         self.bg = (1, 1, 1, 1)
         self.turtle = None
-        self.bind(pos=self.redraw, size=self.redraw)
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         icon_path = os.path.join(root, "Assets", "turtle.jpg")
-        self.turtle_icon = Image(source=icon_path, size_hint=(None, None),
-                                 size=(dp(34), dp(34)), allow_stretch=True,
-                                 keep_ratio=True, opacity=0)
-        self.add_widget(self.turtle_icon)
-        self.turtle_icon.canvas.before.add(PushMatrix())
-        self._rotation = Rotate(angle=0, origin=self.turtle_icon.center)
-        self.turtle_icon.canvas.before.add(self._rotation)
-        self.turtle_icon.canvas.after.add(PopMatrix())
+        try:
+            self.turtle_texture = CoreImage(icon_path).texture if os.path.isfile(icon_path) else None
+        except Exception:
+            self.turtle_texture = None
+        self.bind(pos=self.redraw, size=self.redraw)
 
     def apply(self, command):
         kind = command[0]
@@ -55,9 +51,17 @@ class TurtleCanvas(Widget):
                     Color(*color)
                     Ellipse(pos=(x - dp(size) / 2, y - dp(size) / 2),
                             size=(dp(size), dp(size)))
-        if self.turtle:
-            x, y = self._point(self.turtle[:2])
-            self.turtle_icon.center = (x, y)
-            self.turtle_icon.opacity = 1 if self.turtle[3] else 0
-            self._rotation.origin = self.turtle_icon.center
-            self._rotation.angle = -float(self.turtle[2])
+            if self.turtle and self.turtle[3]:
+                x, y = self._point(self.turtle[:2])
+                size = dp(34)
+                if self.turtle_texture:
+                    PushMatrix()
+                    Rotate(angle=-float(self.turtle[2]), origin=(x, y))
+                    Color(1, 1, 1, 1)
+                    Rectangle(texture=self.turtle_texture,
+                              pos=(x - size / 2, y - size / 2),
+                              size=(size, size))
+                    PopMatrix()
+                else:
+                    Color(0.1, 0.1, 0.1, 1)
+                    Ellipse(pos=(x - dp(5), y - dp(5)), size=(dp(10), dp(10)))
