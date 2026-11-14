@@ -35,6 +35,18 @@ print("Şəkil ölçüsü:", image.shape)
 print("Boz şəkil:", gray.shape)
 print("Kənar piksel sayı:", cv2.countNonZero(edges))
 ''',
+    "pygame_test.py": '''# Pygame Android test: ekran pəncərəsi açır
+import pygame
+
+pygame.init()
+screen = pygame.display.set_mode((640, 480))
+pygame.display.set_caption("PyCreator - Pygame")
+screen.fill((25, 35, 55))
+pygame.draw.circle(screen, (0, 200, 255), (320, 240), 70)
+pygame.display.flip()
+print("Pygame versiyası:", pygame.version.ver)
+print("Pəncərə yaradıldı.")
+''',
     "beautifulsoup_test.py": '''# HTML mətnindən məlumat çıxarma
 from bs4 import BeautifulSoup
 
