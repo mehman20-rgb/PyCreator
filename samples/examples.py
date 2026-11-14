@@ -35,6 +35,44 @@ print("Şəkil ölçüsü:", image.shape)
 print("Boz şəkil:", gray.shape)
 print("Kənar piksel sayı:", cv2.countNonZero(edges))
 ''',
+    "beautifulsoup_test.py": '''# HTML mətnindən məlumat çıxarma
+from bs4 import BeautifulSoup
+
+html = "<html><body><h1>PyCreator</h1><p>Salam Python</p></body></html>"
+soup = BeautifulSoup(html, "html.parser")
+print("Başlıq:", soup.h1.text)
+print("Mətn:", soup.p.text)
+''',
+    "sympy_test.py": '''# Simvolik riyaziyyat
+import sympy as sp
+
+x = sp.symbols("x")
+expression = x**2 - 5*x + 6
+print("İfadə:", expression)
+print("Vuruqlara ayırma:", sp.factor(expression))
+print("Köklər:", sp.solve(expression, x))
+''',
+    "rich_test.py": '''# Terminalda rəngli və formatlı çıxış
+from rich import print
+from rich.panel import Panel
+
+print(Panel("[bold cyan]PyCreator[/bold cyan] kitabxana testi"))
+print("[green]Rich uğurla işləyir![/green]")
+''',
+    "colorama_test.py": '''# Terminal rəngləri
+from colorama import init, Fore, Style
+
+init(autoreset=True)
+print(Fore.GREEN + "Colorama işləyir!")
+print(Fore.YELLOW + "Bu sarı mesajdır.")
+print(Style.BRIGHT + "PyCreator")
+''',
+    "tabulate_test.py": '''# Məlumatları cədvəl formasında göstər
+from tabulate import tabulate
+
+rows = [["Python", "Proqramlaşdırma"], ["OpenCV", "Kompüter görməsi"], ["SymPy", "Riyaziyyat"]]
+print(tabulate(rows, headers=["Modul", "İstifadə sahəsi"], tablefmt="grid"))
+''',
     "sorgu_requests.py": '''# Bu nümunə üçün əvvəlcə "Kitabxanalar" bölməsindən requests quraşdır
 import requests
 
