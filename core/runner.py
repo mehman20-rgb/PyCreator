@@ -136,8 +136,13 @@ class Runner:
                 status = "error"
             else:
                 exec(compiled, {"__name__": "__main__", "__file__": name})
-        except SystemExit:
-            pass
+        except SystemExit as err:
+            # İstifadəçi kodu fayl tapılmadıqda raise SystemExit etdikdə
+            # terminal bunu uğurlu icra kimi yox, xəta kimi göstərsin.
+            status = "error"
+            code_value = getattr(err, "code", None)
+            if code_value not in (None, 0):
+                self.on_output("Proqram dayandırıldı (exit code: %s)\\n" % code_value)
         except KeyboardInterrupt:
             status = "stopped"
         except BaseException as err:
