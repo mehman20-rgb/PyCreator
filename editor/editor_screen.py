@@ -143,6 +143,8 @@ class EditorScreen(BoxLayout):
         self.console.text = ""
         source = self.code.text
         self._uses_turtle = ("import turtle" in source or "from turtle import" in source)
+        if self._uses_turtle and getattr(self, "turtle_terminal", None):
+            self.turtle_terminal.text = ""
         self.code.size_hint_y = 1
         if self._uses_turtle:
             turtle_api.reset()
