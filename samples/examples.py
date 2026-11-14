@@ -35,6 +35,24 @@ print("Şəkil ölçüsü:", image.shape)
 print("Boz şəkil:", gray.shape)
 print("Kənar piksel sayı:", cv2.countNonZero(edges))
 ''',
+    "matplotlib_test.py": '''# Matplotlib Android testi: Agg backend PNG faylı yaradır
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+x = [0, 1, 2, 3, 4]
+y = [0, 1, 4, 9, 16]
+fig, ax = plt.subplots()
+ax.plot(x, y, marker="o")
+ax.set_title("PyCreator - Matplotlib")
+ax.set_xlabel("X")
+ax.set_ylabel("Y")
+ax.grid(True)
+fig.savefig("qrafik.png", dpi=120)
+plt.close(fig)
+print("Matplotlib:", matplotlib.__version__)
+print("Qrafik yaradıldı: qrafik.png")
+''',
     "pygame_test.py": '''# Pygame Android test: ekran pəncərəsi açır
 import pygame
 
