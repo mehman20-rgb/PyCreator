@@ -13,8 +13,7 @@ from ui import dialogs
 from packages.pkgman import PackageManager, PkgError, parse_requirement
 from ui.theme import GREEN, MONO, MUTED, PANEL2, RED, Btn, make_label
 
-POPULAR = ["requests", "rich", "beautifulsoup4", "colorama", "tqdm", "python-dateutil",
-           "pytz", "tabulate", "humanize", "emoji", "pyfiglet", "attrs"]
+POPULAR = ["requests", "beautifulsoup4", "sympy", "rich", "colorama", "tabulate", "tqdm", "python-dateutil", "pytz", "humanize", "emoji", "pyfiglet", "attrs"]
 SKIP_WORDS = {"pip", "pip3", "install", "-r", "-u", "--upgrade"}
 
 
@@ -44,7 +43,7 @@ class LibsScreen(BoxLayout):
         self.add_widget(make_label(
             "Kitabxana adını yaz (bir neçə ad üçün boşluq və ya vergül işlət). "
             "Python-un hazır modulları (os, json, math, random...) quraşdırma tələb etmir. "
-            "numpy və opencv Android üçün APK build zamanı əlavə olunur; onları bu ekrandan pip ilə quraşdırma.",
+            "numpy, opencv, requests, beautifulsoup4, sympy, rich, colorama və tabulate APK-yə build zamanı əlavə olunur; onları bu ekrandan pip ilə quraşdırma.",
             size=13, color=MUTED))
 
         row = BoxLayout(size_hint_y=None, height=dp(70), spacing=dp(6))
