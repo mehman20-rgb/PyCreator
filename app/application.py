@@ -11,7 +11,8 @@ from kivy.uix.screenmanager import NoTransition, Screen, ScreenManager
 from ui import theme
 from ui.theme import ACCENT, BG, PANEL2, Btn
 
-TABS = [("editor", "Redaktor"), ("qr", "QR Code"), ("libs", "Kitabxanalar"), ("files", "Fayllar")]
+TABS = [("editor", "Redaktor"), ("qr", "QR Code"), ("libs", "Kitabxanalar"),
+        ("files", "Fayllar"), ("settings", "Settings")]
 
 
 class PyCreatorApp(App):
@@ -23,16 +24,19 @@ class PyCreatorApp(App):
         Window.clearcolor = BG
         Window.softinput_mode = "resize"
 
-        # Importlar şrift qeydiyyatından sonra edilir ki, bütün vidjetlər DejaVu istifadə etsin.
         from editor.editor_screen import EditorScreen
         from editor.runner_screen import RunnerScreen
         from editor.turtle_screen import TurtleScreen
         from files.files_screen import FilesScreen
         from packages.libs_screen import LibsScreen
         from tools.qr_screen import QRCodeScreen
+        from screens.settings_screen import SettingsScreen
+        from services.storage_manager import StorageManager
 
         data_dir = self.user_data_dir
-        self.code_dir = self._prepare_code_dir(data_dir)
+        old_dir = self._legacy_code_dir(data_dir)
+        self.storage_manager = StorageManager(data_dir)
+        self.code_dir, self.public_storage = self.storage_manager.prepare(old_dir)
         site_dir = os.path.join(data_dir, "site-packages")
         os.chdir(self.code_dir)
         self._seed_examples(data_dir)
@@ -47,9 +51,16 @@ class PyCreatorApp(App):
         self.libs = LibsScreen(site_dir)
         self.qr = QRCodeScreen()
         self.files = FilesScreen(self.code_dir, self._open_from_files, self.editor.forget)
+        self.settings_page = SettingsScreen(
+            os.path.join(data_dir, "settings.json"), self.storage_manager,
+            self._refresh_storage_location)
 
         self.sm = ScreenManager(transition=NoTransition())
-        for name, widget in (("editor", self.editor), ("runner", self.runner_page), ("turtle", self.turtle_page), ("qr", self.qr), ("libs", self.libs), ("files", self.files)):
+        pages = (("editor", self.editor), ("runner", self.runner_page),
+                 ("turtle", self.turtle_page), ("qr", self.qr),
+                 ("libs", self.libs), ("files", self.files),
+                 ("settings", self.settings_page))
+        for name, widget in pages:
             screen = Screen(name=name)
             screen.add_widget(widget)
             self.sm.add_widget(screen)
@@ -71,30 +82,30 @@ class PyCreatorApp(App):
         Clock.schedule_interval(lambda _dt: self.editor.persist(), 20)
         return root
 
-    # ---------- qovluqlar ----------
-    def _prepare_code_dir(self, data_dir):
-        """Fayl menecerində görünən qovluğu yoxlayır; alınmazsa daxili yaddaşdan istifadə edir."""
-        preferred = None
+    def _legacy_code_dir(self, data_dir):
         try:
-            from jnius import autoclass  # yalnız Android-də mövcuddur
+            from jnius import autoclass
             activity = autoclass("org.kivy.android.PythonActivity").mActivity
             ext = activity.getExternalFilesDir(None)
             if ext is not None:
-                preferred = os.path.join(ext.getAbsolutePath(), "kodlar")
+                return os.path.join(ext.getAbsolutePath(), "kodlar")
         except Exception:
-            preferred = None
-        for path in (preferred, os.path.join(data_dir, "kodlar")):
-            if not path:
-                continue
-            try:
-                os.makedirs(path, exist_ok=True)
-                return path
-            except OSError:
-                continue
-        return data_dir
+            pass
+        return os.path.join(data_dir, "kodlar")
+
+    def _refresh_storage_location(self):
+        old_dir = self.code_dir
+        new_dir, is_public = self.storage_manager.prepare(old_dir)
+        self.code_dir = new_dir
+        self.public_storage = is_public
+        os.chdir(new_dir)
+        self.editor.code_dir = new_dir
+        self.files.code_dir = new_dir
+        self.editor.persist()
+        self.files.refresh()
+        self.settings_page.refresh_storage()
 
     def _seed_examples(self, data_dir):
-        marker = os.path.join(data_dir, ".seeded")
         from samples.examples import EXAMPLES
         for name, code in EXAMPLES.items():
             path = os.path.join(self.code_dir, name)
@@ -105,12 +116,11 @@ class PyCreatorApp(App):
                 except OSError:
                     pass
         try:
-            with open(marker, "w") as fh:
+            with open(os.path.join(data_dir, ".seeded"), "w") as fh:
                 fh.write("1")
         except OSError:
             pass
 
-    # ---------- naviqasiya ----------
     def switch(self, name):
         self.sm.current = name
         immersive = name in ("runner", "turtle")
@@ -123,24 +133,26 @@ class PyCreatorApp(App):
         if name == "files":
             self.files.refresh()
             self.editor.persist()
+        if name == "settings":
+            self.settings_page.refresh_storage()
 
     def _open_from_files(self, name):
         if self.editor.open_file(name):
             self.switch("editor")
 
     def _on_back(self, _window, key, *_args):
-        if key == 27 and self.sm.current != "editor":  # Android "geri" düyməsi
+        if key == 27 and self.sm.current != "editor":
             self.switch("editor")
             return True
         return False
 
-    # ---------- həyat dövrü ----------
     def on_pause(self):
         self.editor.persist()
         return True
 
     def on_resume(self):
-        pass
+        if hasattr(self, "settings_page"):
+            self._refresh_storage_location()
 
     def on_stop(self):
         self.editor.persist()
