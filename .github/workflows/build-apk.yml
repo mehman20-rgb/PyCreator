@@ -59,6 +59,12 @@ jobs:
             echo "::notice::Assets/app_icon.jpg tapılmadı; standart tətbiq ikonu ilə davam edilir."
           fi
 
+      - name: Köhnə python-for-android pip virtual mühitini təmizlə
+        run: |
+          # .buildozer cache-i əvvəlki yarımçıq pip yenilənməsindən zədələnə bilər.
+          # Yalnız müvəqqəti venv silinir; kompilyasiya edilmiş kitabxanalar və modullar saxlanılır.
+          find .buildozer/android/platform -type d -path '*/build/venv' -prune -exec rm -rf {} + 2>/dev/null || true
+
       - name: APK qur
         run: |
           set -o pipefail
