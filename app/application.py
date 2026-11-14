@@ -26,6 +26,7 @@ class PyCreatorApp(App):
         # Importlar şrift qeydiyyatından sonra edilir ki, bütün vidjetlər DejaVu istifadə etsin.
         from editor.editor_screen import EditorScreen
         from editor.runner_screen import RunnerScreen
+        from editor.turtle_screen import TurtleScreen
         from files.files_screen import FilesScreen
         from packages.libs_screen import LibsScreen
         from tools.qr_screen import QRCodeScreen
@@ -38,13 +39,16 @@ class PyCreatorApp(App):
 
         self.editor = EditorScreen(data_dir, self.code_dir)
         self.runner_page = RunnerScreen(self.editor, lambda: self.switch("editor"))
+        self.turtle_page = TurtleScreen(lambda: self.switch("editor"))
+        self.editor.turtle_canvas = self.turtle_page.canvas_widget
         self.editor.show_runner = lambda: self.switch("runner")
+        self.editor.show_turtle = lambda: self.switch("turtle")
         self.libs = LibsScreen(site_dir)
         self.qr = QRCodeScreen()
         self.files = FilesScreen(self.code_dir, self._open_from_files, self.editor.forget)
 
         self.sm = ScreenManager(transition=NoTransition())
-        for name, widget in (("editor", self.editor), ("runner", self.runner_page), ("qr", self.qr), ("libs", self.libs), ("files", self.files)):
+        for name, widget in (("editor", self.editor), ("runner", self.runner_page), ("turtle", self.turtle_page), ("qr", self.qr), ("libs", self.libs), ("files", self.files)):
             screen = Screen(name=name)
             screen.add_widget(widget)
             self.sm.add_widget(screen)
@@ -110,9 +114,10 @@ class PyCreatorApp(App):
     # ---------- naviqasiya ----------
     def switch(self, name):
         self.sm.current = name
-        self.nav.height = 0 if name == "runner" else dp(52)
-        self.nav.opacity = 0 if name == "runner" else 1
-        self.nav.disabled = name == "runner"
+        immersive = name in ("runner", "turtle")
+        self.nav.height = 0 if immersive else dp(52)
+        self.nav.opacity = 0 if immersive else 1
+        self.nav.disabled = immersive
         for tab, button in self.tab_buttons.items():
             button.base = ACCENT if tab == name else PANEL2
             button.background_color = button.base
