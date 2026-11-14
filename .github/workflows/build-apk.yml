@@ -16,9 +16,9 @@ jobs:
     timeout-minutes: 90
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -33,7 +33,7 @@ jobs:
         run: pip install buildozer setuptools cython==0.29.34
 
       - name: Keşi bərpa et
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.buildozer
@@ -81,14 +81,14 @@ jobs:
 
       - name: Tam logu saxla
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-log
           path: build.log
 
       - name: APK Artifact yüklə
         if: success() && !startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: PyCreator-apk
           path: bin/*.apk
