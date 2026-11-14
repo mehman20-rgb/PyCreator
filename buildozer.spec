@@ -11,7 +11,7 @@ version = 1.0.0
 
 # pygments rəngləmə, certifi HTTPS yoxlaması üçün lazımdır
 requirements = python3,kivy==2.3.2,pygments,certifi,qrcode,numpy,opencv,requests,beautifulsoup4,sympy,rich,colorama,tabulate,pygame
-p4a.branch = develop
+p4a.branch = v2026.05.09
 orientation = portrait
 fullscreen = 0
 
