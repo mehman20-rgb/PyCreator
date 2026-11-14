@@ -35,32 +35,6 @@ print("Şəkil ölçüsü:", image.shape)
 print("Boz şəkil:", gray.shape)
 print("Kənar piksel sayı:", cv2.countNonZero(edges))
 ''',
-    "matplotlib_test.py": '''# 2D qrafik testi
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
-x = [0, 1, 2, 3, 4]
-y = [0, 1, 4, 9, 16]
-plt.plot(x, y, marker="o")
-plt.title("PyCreator - 2D qrafik")
-plt.xlabel("X")
-plt.ylabel("Y")
-plt.grid(True)
-plt.savefig("qrafik.png")
-print("Qrafik qrafik.png faylına yazıldı.")
-''',
-    "moderngl_test.py": '''# ModernGL mövcud OpenGL konteksti tələb edir.
-# Android-də kontekst yaradılması ayrıca inteqrasiya tələb edə bilər.
-import moderngl
-
-print("ModernGL versiyası:", moderngl.__version__)
-try:
-    ctx = moderngl.create_standalone_context()
-    print("OpenGL renderer:", ctx.info.get("GL_RENDERER"))
-except Exception as error:
-    print("OpenGL konteksti yaradılmadı:", error)
-''',
     "pygame_test.py": '''# Pygame Android test: ekran pəncərəsi açır
 import pygame
 
