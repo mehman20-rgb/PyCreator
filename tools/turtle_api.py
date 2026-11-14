@@ -25,7 +25,7 @@ def reset_canvas():
             _commands.get_nowait()
         except queue.Empty:
             break
-    _emit("clear", (0.04, 0.06, 0.10, 1))
+    _emit("clear", (1, 1, 1, 1))
 
 
 class Turtle:
@@ -34,7 +34,7 @@ class Turtle:
         self._y = 0.0
         self._heading = 0.0
         self._down = True
-        self._color = (0.15, 0.72, 1.0, 1)
+        self._color = (0, 0, 0, 1)
         self._width = 2.0
         self._visible = visible
         _emit("turtle", self._x, self._y, self._heading, self._visible)
@@ -189,7 +189,7 @@ class Turtle:
 
     def reset(self):
         self._x, self._y, self._heading = 0.0, 0.0, 0.0
-        self._down, self._color, self._width = True, (0.15, 0.72, 1.0, 1), 2.0
+        self._down, self._color, self._width = True, (0, 0, 0, 1), 2.0
         _emit("clear", None)
         _emit("turtle", self._x, self._y, self._heading, self._visible)
 
@@ -206,7 +206,7 @@ class _Screen:
         if color is not None:
             names = {"black": (0,0,0,1), "white": (1,1,1,1),
                      "navy": (0.02,0.05,0.12,1), "lightblue": (0.65,0.85,1,1)}
-            rgba = names.get(str(color).lower(), (0.04,0.06,0.10,1))
+            rgba = names.get(str(color).lower(), (1,1,1,1))
             _emit("clear", rgba)
         return None
 
