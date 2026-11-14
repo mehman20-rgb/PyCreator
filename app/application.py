@@ -95,8 +95,6 @@ class PyCreatorApp(App):
 
     def _seed_examples(self, data_dir):
         marker = os.path.join(data_dir, ".seeded")
-        if os.path.exists(marker):
-            return
         from samples.examples import EXAMPLES
         for name, code in EXAMPLES.items():
             path = os.path.join(self.code_dir, name)
