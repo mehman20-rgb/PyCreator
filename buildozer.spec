@@ -11,8 +11,9 @@ version = 1.0.0
 
 # pygments rəngləmə, certifi HTTPS yoxlaması üçün lazımdır
 requirements = python3,kivy==2.3.2,pygments,certifi,qrcode,numpy,opencv,charset_normalizer,requests,beautifulsoup4,sympy,rich,colorama,tabulate,pygame
-# python-for-android #3360 düzəlişi: venv --clear və pip self-upgrade addımının ləğvi
-p4a.branch = 0382d27de2f7315ed98e74884bafb30365decdee
+# python-for-android develop: #3360-dan sonrakı pip/venv düzəlişləri daxildir.
+# Buildozer bu dəyəri git clone -b üçün istifadə etdiyindən branch adı olmalıdır.
+p4a.branch = develop
 p4a.local_recipes = ./p4a-recipes
 orientation = portrait
 fullscreen = 0
