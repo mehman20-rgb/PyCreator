@@ -53,6 +53,17 @@ plt.close(fig)
 print("Matplotlib:", matplotlib.__version__)
 print("Qrafik yaradıldı: qrafik.png")
 ''',
+    "android3d_test.py": '''# PyCreator Android 3D API
+import py3d
+
+py3d.clear()
+py3d.set_background((0.025, 0.04, 0.08, 1))
+py3d.add_cube(size=2.2, color=(0.1, 0.65, 1.0))
+py3d.add_cube(x=1.8, size=1.0, color=(1.0, 0.35, 0.2))
+py3d.set_rotation(25, 35, 0)
+py3d.show()
+print("PyCreator 3D səhnəsi hazırdır.")
+''',
     "pygame_test.py": '''# Pygame Android test: ekran pəncərəsi açır
 import pygame
 
