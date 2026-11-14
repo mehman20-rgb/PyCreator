@@ -66,6 +66,16 @@ jobs:
           # Yalnız müvəqqəti venv silinir; kompilyasiya edilmiş kitabxanalar və modullar saxlanılır.
           find .buildozer/android/platform -type d -path '*/build/venv' -prune -exec rm -rf {} + 2>/dev/null || true
 
+      - name: python-for-android multi-arxitektura pip düzəlişi
+        run: |
+          set -euo pipefail
+          p4a_dir=".buildozer/android/platform/python-for-android"
+          mkdir -p "$(dirname "$p4a_dir")"
+          git clone --depth 1 --branch v2026.05.09 https://github.com/kivy/python-for-android.git "$p4a_dir"
+          git -C "$p4a_dir" checkout -B v2026.05.09 58d21141f17c889bf8585f5665921d72028f8831
+          test "$(git -C "$p4a_dir" rev-parse HEAD)" = "58d21141f17c889bf8585f5665921d72028f8831"
+          python .github/scripts/patch_p4a_build.py "$p4a_dir/pythonforandroid/build.py"
+
       - name: APK qur
         run: |
           set -o pipefail
