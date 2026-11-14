@@ -41,6 +41,7 @@ class PyCreatorApp(App):
         self.runner_page = RunnerScreen(self.editor, lambda: self.switch("editor"))
         self.turtle_page = TurtleScreen(lambda: self.switch("editor"))
         self.editor.turtle_canvas = self.turtle_page.canvas_widget
+        self.editor.turtle_terminal = self.turtle_page.terminal
         self.editor.show_runner = lambda: self.switch("runner")
         self.editor.show_turtle = lambda: self.switch("turtle")
         self.libs = LibsScreen(site_dir)
