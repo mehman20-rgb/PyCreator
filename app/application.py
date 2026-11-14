@@ -12,7 +12,7 @@ from ui import theme
 from ui.theme import ACCENT, BG, PANEL2, Btn
 
 TABS = [("editor", "Redaktor"), ("qr", "QR Code"), ("libs", "Kitabxanalar"),
-        ("files", "Fayllar"), ("settings", "Settings")]
+        ("files", "Fayllar"), ("3d", "3D"), ("settings", "Settings")]
 
 
 class PyCreatorApp(App):
@@ -30,6 +30,7 @@ class PyCreatorApp(App):
         from files.files_screen import FilesScreen
         from packages.libs_screen import LibsScreen
         from tools.qr_screen import QRCodeScreen
+        from tools.three_d_screen import ThreeDScreen
         from screens.settings_screen import SettingsScreen
         from services.storage_manager import StorageManager
 
@@ -50,6 +51,8 @@ class PyCreatorApp(App):
         self.editor.show_turtle = lambda: self.switch("turtle")
         self.libs = LibsScreen(site_dir)
         self.qr = QRCodeScreen()
+        self.three_d = ThreeDScreen()
+        self.editor.show_3d = lambda: self.switch("3d")
         self.files = FilesScreen(self.code_dir, self._open_from_files, self.editor.forget)
         self.settings_page = SettingsScreen(
             os.path.join(data_dir, "settings.json"), self.storage_manager,
@@ -58,7 +61,7 @@ class PyCreatorApp(App):
         self.sm = ScreenManager(transition=NoTransition())
         pages = (("editor", self.editor), ("runner", self.runner_page),
                  ("turtle", self.turtle_page), ("qr", self.qr),
-                 ("libs", self.libs), ("files", self.files),
+                 ("libs", self.libs), ("files", self.files), ("3d", self.three_d),
                  ("settings", self.settings_page))
         for name, widget in pages:
             screen = Screen(name=name)
