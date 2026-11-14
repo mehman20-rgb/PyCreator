@@ -207,11 +207,14 @@ class EditorScreen(BoxLayout):
             del chunks[:]
 
     def _append(self, text):
-        text = self.console.text + text.replace("\r", "")
-        if len(text) > MAX_CONSOLE:
-            text = text[-int(MAX_CONSOLE * 0.8):]
-        self.console.text = text
-        self.console.cursor = self.console.get_cursor_from_index(len(text))
+        target = self.console
+        if self._uses_turtle and getattr(self, "turtle_terminal", None):
+            target = self.turtle_terminal
+        value = target.text + text.replace("\r", "")
+        if len(value) > MAX_CONSOLE:
+            value = value[-int(MAX_CONSOLE * 0.8):]
+        target.text = value
+        target.cursor = target.get_cursor_from_index(len(value))
 
     def _finish(self, status, secs):
         self._set_running(False)
