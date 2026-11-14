@@ -1,14 +1,14 @@
 """Android-compatible Pygame recipe for CPython 3.14.
 
-The upstream p4a recipe pins Pygame 2.1.0, whose generated C sources
-include the removed CPython header longintrepr.h. Build from the 2.6.1
-GitHub source archive so Cython regenerates the extension against the
-active Python headers.
+Pygame 2.6.1 contains a Cython extension declaration for Sprite.__dict__.
+With current Cython 3.1, assigning to that special attribute in __cinit__
+is rejected: the extension type's dictionary is allocated automatically.
+Patch only that obsolete assignment while keeping the full pygame.sprite
+extension and every other Pygame component in the build.
 """
 from pathlib import Path
 
 from pythonforandroid.recipes.pygame import Pygame2Recipe
-from pythonforandroid.toolchain import current_directory
 
 
 class Pygame261Recipe(Pygame2Recipe):
@@ -18,22 +18,20 @@ class Pygame261Recipe(Pygame2Recipe):
 
     def prebuild_arch(self, arch):
         super().prebuild_arch(arch)
-        with current_directory(self.get_build_dir(arch.arch)):
-            # _sprite is an optional Cython accelerator. pygame.sprite itself
-            # remains available in Python; omitting this accelerator avoids
-            # a separate Cython 3.1 incompatibility.
-            setup_path = Path("Setup")
-            if setup_path.exists():
-                lines = setup_path.read_text().splitlines()
-                lines = [
-                    line for line in lines
-                    if not line.lstrip().startswith("_sprite ")
-                ]
-                setup_path.write_text("\n".join(lines) + "\n")
 
-            optional_pyx = Path("src_c/_sprite.pyx")
-            if optional_pyx.exists():
-                optional_pyx.unlink()
+        sprite_source = (
+            Path(self.get_build_dir(arch.arch))
+            / "src_c"
+            / "cython"
+            / "pygame"
+            / "_sprite.pyx"
+        )
+        if sprite_source.exists():
+            source = sprite_source.read_text(encoding="utf-8")
+            obsolete_init = "        self.__dict__ = {}\n"
+            if obsolete_init in source:
+                source = source.replace(obsolete_init, "", 1)
+                sprite_source.write_text(source, encoding="utf-8")
 
 
 recipe = Pygame261Recipe()
