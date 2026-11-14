@@ -10,7 +10,7 @@ version = 1.0.0
 # GitHub Actions həmin fayl olduqda icon.filename parametrini avtomatik aktivləşdirir.
 
 # pygments rəngləmə, certifi HTTPS yoxlaması üçün lazımdır
-requirements = python3,kivy==2.3.2,pygments,certifi,qrcode,numpy,opencv,requests,beautifulsoup4,sympy,rich,colorama,tabulate,pygame
+requirements = python3,kivy==2.3.2,pygments,certifi,qrcode,numpy,opencv,charset_normalizer,requests,beautifulsoup4,sympy,rich,colorama,tabulate,pygame
 p4a.branch = v2026.05.09
 p4a.local_recipes = ./p4a-recipes
 orientation = portrait
