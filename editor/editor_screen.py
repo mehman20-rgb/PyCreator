@@ -143,6 +143,7 @@ class EditorScreen(BoxLayout):
         self.console.text = ""
         source = self.code.text
         self._uses_turtle = ("import turtle" in source or "from turtle import" in source)
+        self._uses_3d = ("import py3d" in source or "from py3d import" in source)
         if self._uses_turtle and getattr(self, "turtle_terminal", None):
             self.turtle_terminal.text = ""
         self.code.size_hint_y = 1
@@ -151,6 +152,8 @@ class EditorScreen(BoxLayout):
         self._set_running(True)
         if self._uses_turtle and hasattr(self, "show_turtle"):
             self.show_turtle()
+        elif self._uses_3d and hasattr(self, "show_3d"):
+            self.show_3d()
         elif hasattr(self, "show_runner"):
             self.show_runner()
         self.runner.start(source, self.name or "adsiz")
