@@ -43,7 +43,7 @@ class LibsScreen(BoxLayout):
         self.add_widget(make_label(
             "Kitabxana adını yaz (bir neçə ad üçün boşluq və ya vergül işlət). "
             "Python-un hazır modulları (os, json, math, random...) quraşdırma tələb etmir. "
-            "numpy, opencv, requests, beautifulsoup4, sympy, rich, colorama və tabulate APK-yə build zamanı əlavə olunur; onları bu ekrandan pip ilə quraşdırma.",
+            "numpy, opencv, pygame, requests, beautifulsoup4, sympy, rich, colorama və tabulate APK-yə build zamanı əlavə olunur; onları bu ekrandan pip ilə quraşdırma.",
             size=13, color=MUTED))
 
         row = BoxLayout(size_hint_y=None, height=dp(70), spacing=dp(6))
