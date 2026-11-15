@@ -6,10 +6,11 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
 from kivy.uix.screenmanager import NoTransition, Screen, ScreenManager
 
 from ui import theme
-from ui.theme import ACCENT, BG, PANEL2, Btn
+from ui.theme import ACCENT, BG, PANEL2, TEXT, Btn
 
 TABS = [("editor", "Redaktor"), ("runner", "Runner"), ("qr", "QR Code"),
         ("libs", "Kitabxanalar"), ("files", "Fayllar"), ("3d", "3D"),
@@ -69,14 +70,34 @@ class PyCreatorApp(App):
             screen.add_widget(widget)
             self.sm.add_widget(screen)
 
-        # Sol tərəfdə yalnız ikonlardan ibarət şaquli naviqasiya paneli.
-        root = BoxLayout(orientation="horizontal", spacing=dp(4))
+        # Üst panel: üç xətli hamburger düyməsi və açılıb-bağlanan naviqasiya.
+        root = BoxLayout(orientation="vertical", spacing=0)
+        self.topbar = BoxLayout(
+            orientation="horizontal", size_hint_y=None, height=dp(50),
+            spacing=dp(8), padding=(dp(6), dp(4)))
+        self.menu_btn = Btn(
+            "☰", base=PANEL2, size_hint_x=None, width=dp(48),
+            height=dp(42), font_size=dp(26))
+        self.menu_btn.bind(on_release=lambda *_: self.toggle_navigation())
+        self.topbar.add_widget(self.menu_btn)
+
+        self.page_title = Label(
+            text="PyCreator", color=TEXT, font_size=dp(16),
+            halign="left", valign="middle")
+        self.page_title.bind(size=lambda widget, _value:
+                             setattr(widget, "text_size", widget.size))
+        self.topbar.add_widget(self.page_title)
+
+        body = BoxLayout(orientation="horizontal", spacing=dp(4))
         self.nav = BoxLayout(
             orientation="vertical",
             size_hint_x=None,
-            width=Window.width * 0.20,
+            width=0,
+            opacity=0,
+            disabled=True,
             spacing=dp(7),
             padding=(dp(5), dp(10), dp(5), dp(8)))
+        self.drawer_open = False
         self.tab_buttons = {}
         nav_icons = {
             "editor": "‹›",
@@ -87,8 +108,8 @@ class PyCreatorApp(App):
             "3d": "◇",
             "settings": "⚙",
         }
-        root.add_widget(self.nav)
-        root.add_widget(self.sm)
+        body.add_widget(self.nav)
+        body.add_widget(self.sm)
         for name, _label in TABS:
             b = Btn(
                 nav_icons[name],
@@ -103,6 +124,8 @@ class PyCreatorApp(App):
             self.tab_buttons[name] = b
             self.nav.add_widget(b)
         self.nav.add_widget(BoxLayout())
+        root.add_widget(self.topbar)
+        root.add_widget(body)
 
         self.switch("editor")
         Window.bind(on_keyboard=self._on_back)
@@ -148,12 +171,38 @@ class PyCreatorApp(App):
         except OSError:
             pass
 
+    def toggle_navigation(self):
+        """Hamburger düyməsi ilə sol naviqasiya panelini açır və bağlayır."""
+        if self.sm.current == "turtle":
+            return
+        self.drawer_open = not self.drawer_open
+        if self.drawer_open:
+            self.nav.width = min(max(dp(92), Window.width * 0.23), dp(128))
+            self.nav.opacity = 1
+            self.nav.disabled = False
+            self.menu_btn.text = "×"
+        else:
+            self.nav.width = 0
+            self.nav.opacity = 0
+            self.nav.disabled = True
+            self.menu_btn.text = "☰"
+
     def switch(self, name):
         self.sm.current = name
         immersive = name == "turtle"
-        self.nav.width = 0 if immersive else Window.width * 0.20
-        self.nav.opacity = 0 if immersive else 1
-        self.nav.disabled = immersive
+
+        # Səhifə seçildikdə drawer bağlanır; Turtle tam ekran rejimini saxlayır.
+        self.drawer_open = False
+        self.nav.width = 0
+        self.nav.opacity = 0
+        self.nav.disabled = True
+        self.menu_btn.text = "☰"
+        self.topbar.height = 0 if immersive else dp(50)
+        self.topbar.opacity = 0 if immersive else 1
+        self.topbar.disabled = immersive
+        titles = dict(TABS)
+        self.page_title.text = titles.get(name, "PyCreator")
+
         for tab, button in self.tab_buttons.items():
             button.base = ACCENT if tab == name else PANEL2
             button.background_color = button.base
@@ -177,6 +226,9 @@ class PyCreatorApp(App):
             self.switch("editor")
 
     def _on_back(self, _window, key, *_args):
+        if key == 27 and self.drawer_open:
+            self.toggle_navigation()
+            return True
         if key == 27 and self.sm.current != "editor":
             self.switch("editor")
             return True

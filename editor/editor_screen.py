@@ -48,7 +48,17 @@ class _AutoIndent:
 
 
 class CodeBox(_AutoIndent, _BASE):
-    pass
+    """Bir toxunuşla kursoru yerləşdirir, iki toxunuşla yazı rejimini açır."""
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos) and not self.readonly:
+            # Klaviatura artıq açıqdırsa, standart TextInput idarəetməsi işləsin.
+            # Fokus yoxdursa, ilk toxunuş yalnız kursoru yerləşdirsin.
+            if self.focus or getattr(touch, "is_double_tap", False):
+                return super().on_touch_down(touch)
+            self.cursor = self.get_cursor_from_xy(*touch.pos)
+            return False
+        return super().on_touch_down(touch)
 
 
 def _make_code_box():
@@ -106,9 +116,18 @@ class EditorScreen(BoxLayout):
 
         self.add_widget(self._build_symbols())
 
+        # Uzun kod sətirləri kəsilmədən üfüqi, çoxsətirli kod isə şaquli sürüşdürülür.
+        self.editor_scroll = ScrollView(
+            size_hint=(1, 1), do_scroll_x=True, do_scroll_y=True,
+            bar_width=dp(3), scroll_type=["bars", "content"])
         self.code = _make_code_box()
-        self.code.size_hint_y = 1
-        self.add_widget(self.code)
+        self.code.size_hint = (None, None)
+        self.editor_scroll.add_widget(self.code)
+        self.add_widget(self.editor_scroll)
+        self._resize_code_trigger = Clock.create_trigger(self._sync_code_extent, 0)
+        self.code.bind(text=lambda *_: self._resize_code_trigger())
+        self.editor_scroll.bind(size=lambda *_: self._resize_code_trigger())
+        self._resize_code_trigger()
 
         # Nəticə konsolu ayrıca tam ekran Runner səhifəsində göstərilir.
         self.console = TextInput(
@@ -122,21 +141,85 @@ class EditorScreen(BoxLayout):
         self.input_row.add_widget(self.input_field)
 
     def _build_symbols(self):
-        scroll = ScrollView(size_hint_y=None, height=dp(40), do_scroll_y=False, bar_width=0)
+        scroll = ScrollView(
+            size_hint_y=None, height=dp(40), do_scroll_x=True,
+            do_scroll_y=False, bar_width=0)
         grid = GridLayout(rows=1, size_hint_x=None, spacing=dp(4))
         grid.bind(minimum_width=grid.setter("width"))
+
+        # Kompüterdəki Ctrl qısayollarının mobil qarşılığı.
+        shortcuts = (
+            ("Ctrl+Z", "undo"),
+            ("Ctrl+C", "copy"),
+            ("Ctrl+V", "paste"),
+            ("Ctrl+X", "cut"),
+            ("Ctrl+A", "select_all"),
+        )
+        for label, action in shortcuts:
+            button = Btn(
+                label, base=ACCENT, size_hint_x=None, width=dp(68),
+                height=dp(40), font_size=sp(11))
+            button.bind(on_release=lambda _w, a=action: self._shortcut(a))
+            grid.add_widget(button)
+
         for label, text in SYMBOLS:
-            b = Btn(label, base=PANEL2, size_hint_x=None, width=dp(54), height=dp(40))
-            b.bind(on_release=lambda _w, t=text: self._insert(t))
-            grid.add_widget(b)
+            button = Btn(label, base=PANEL2, size_hint_x=None,
+                         width=dp(54), height=dp(40))
+            button.bind(on_release=lambda _w, t=text: self._insert(t))
+            grid.add_widget(button)
         scroll.add_widget(grid)
         return scroll
 
+    def _shortcut(self, action):
+        """Ctrl+Z/C/V/X/A əməliyyatlarını TextInput-un daxili API-si ilə icra edir."""
+        code = self.code
+        keep_focus = code.focus
+        if action == "undo":
+            code.do_undo()
+        elif action == "copy":
+            code.copy()
+        elif action == "paste":
+            code.paste()
+        elif action == "cut":
+            code.cut()
+        elif action == "select_all":
+            code.select_all()
+
+        # Toolbar əməliyyatları öz-özünə Android klaviaturasını açmamalıdır.
+        if not keep_focus:
+            code.focus = False
+        self._resize_code_trigger()
+
     def _insert(self, text):
+        keep_focus = self.code.focus
         self.code.insert_text(text)
-        if len(text) == 2 and text[0] in "([{\"'":
+        if len(text) == 2 and text[0] in "([{\\\"'":
             self.code.do_cursor_movement("cursor_left")
-        Clock.schedule_once(lambda _dt: setattr(self.code, "focus", True), 0.05)
+        if not keep_focus:
+            self.code.focus = False
+        self._resize_code_trigger()
+
+    def _sync_code_extent(self, *_):
+        """TextInput ölçüsünü ən uzun sətirə və ümumi sətir sayına uyğunlaşdırır."""
+        if not hasattr(self, "code") or not hasattr(self, "editor_scroll"):
+            return
+        lines = (self.code.text or "").split("\\n")
+        try:
+            widest = max(
+                (self.code._get_text_width(line, self.code.tab_width, None)
+                 for line in lines),
+                default=0)
+        except Exception:
+            widest = max((len(line.expandtabs(4)) for line in lines), default=0)
+            widest *= self.code.font_size * 0.62
+
+        padding = self.code.padding
+        left, top, right, bottom = padding
+        line_height = self.code.line_height + self.code.line_spacing
+        content_width = widest + left + right + dp(16)
+        content_height = len(lines) * line_height + top + bottom + dp(8)
+        self.code.width = max(self.editor_scroll.width, content_width)
+        self.code.height = max(self.editor_scroll.height, content_height)
 
     # ---------- işə salma ----------
     def run(self):
