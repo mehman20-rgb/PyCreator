@@ -203,7 +203,10 @@ class EditorScreen(BoxLayout):
         """TextInput ölçüsünü ən uzun sətirə və ümumi sətir sayına uyğunlaşdırır."""
         if not hasattr(self, "code") or not hasattr(self, "editor_scroll"):
             return
-        lines = (self.code.text or "").split("\\n")
+        source = self.code.text or ""
+        lines = source.splitlines() or [""]
+        if source.endswith(chr(10)):
+            lines.append("")
         try:
             widest = max(
                 (self.code._get_text_width(line, self.code.tab_width, None)
