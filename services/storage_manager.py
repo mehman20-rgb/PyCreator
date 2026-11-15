@@ -48,7 +48,7 @@ class StorageManager:
             Intent = autoclass("android.content.Intent")
             intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             intent.addCategory(Intent.CATEGORY_OPENABLE)
-            intent.setType("text/x-python")
+            intent.setType("text/plain")
             intent.putExtra(Intent.EXTRA_TITLE, filename or "untitled.py")
 
             self._save_callback = callback
@@ -83,6 +83,13 @@ class StorageManager:
             PythonActivity = autoclass("org.kivy.android.PythonActivity")
             activity = PythonActivity.mActivity
             resolver = activity.getContentResolver()
+            try:
+                flags = intent.getFlags()
+                grant_flags = flags & (Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                                       Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                resolver.takePersistableUriPermission(uri, grant_flags)
+            except Exception:
+                pass
             stream = resolver.openOutputStream(uri)
             if stream is None:
                 raise IOError("Faylı yazmaq üçün axın açıla bilmədi.")
@@ -94,13 +101,35 @@ class StorageManager:
             finally:
                 writer.close()
             if callback:
-                callback(True, None)
+                callback(True, str(uri))
         except Exception as exc:
             if callback:
                 callback(False, str(exc))
         finally:
             self._pending_content = None
             self._unbind_result()
+
+    def write_document(self, uri_string, content, callback):
+        """Əvvəl seçilmiş sənəd URI-sinə yenidən yazır."""
+        try:
+            activity, autoclass = self._android()
+            if activity is None:
+                raise RuntimeError("Android sənəd xidməti əlçatan deyil.")
+            Uri = autoclass("android.net.Uri")
+            Writer = autoclass("java.io.OutputStreamWriter")
+            uri = Uri.parse(uri_string)
+            stream = activity.getContentResolver().openOutputStream(uri, "wt")
+            if stream is None:
+                raise IOError("Sənəd yazmaq üçün açıla bilmədi.")
+            writer = Writer(stream, "UTF-8")
+            try:
+                writer.write(content)
+                writer.flush()
+            finally:
+                writer.close()
+            callback(True, uri_string)
+        except Exception as exc:
+            callback(False, str(exc))
 
     def _unbind_result(self):
         if self._activity_module is not None:
