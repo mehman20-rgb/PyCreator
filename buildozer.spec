@@ -14,6 +14,8 @@ requirements = python3,kivy==2.3.2,pygments,certifi,qrcode,numpy,opencv,charset_
 # python-for-android develop: #3360-dan sonrakı pip/venv düzəlişləri daxildir.
 # Buildozer bu dəyəri git clone -b üçün istifadə etdiyindən branch adı olmalıdır.
 p4a.branch = develop
+# Kivy və Pygame eyni SDL2 bootstrap üzərində yığılır.
+p4a.bootstrap = sdl2
 p4a.local_recipes = ./p4a-recipes
 orientation = portrait
 fullscreen = 0
