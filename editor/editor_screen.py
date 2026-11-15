@@ -410,8 +410,10 @@ class EditorScreen(BoxLayout):
         name = name.strip().replace("/", "_").replace("\\", "_")
         if not name:
             return
-        if "." not in name:
-            name += ".py"
+        # Bu redaktor Python mənbə faylı saxlayır: həmişə .py uzantısı.
+        base, extension = os.path.splitext(name)
+        if extension.lower() != ".py":
+            name = (base if extension else name) + ".py"
         if self.storage_manager is None:
             dialogs.info("Saxlama xətası", "Android fayl seçicisi qoşulmayıb.")
             return
@@ -423,8 +425,32 @@ class EditorScreen(BoxLayout):
                 self._append_status("Telefon yaddaşında saxlandı: %s" % name)
             else:
                 dialogs.info("Saxlama xətası", uri_or_error or "Fayl saxlanmadı.")
+
+        def updated_existing(ok, result):
+            if ok:
+                finished(True, result)
+                return
+            error_text = str(result or "").lower()
+            # Köhnə build-lərdə .external_uri str(Uri) LocalRef kimi yazılmışdı.
+            # Etibarsız/bitmiş URI üçün yeni düzgün SAF sənədi yarat.
+            if (not self._saved_uri or
+                    not self._saved_uri.startswith("content://") or
+                    "no content provider" in error_text or
+                    "filenotfoundexception" in error_text or
+                    "permission" in error_text):
+                self._saved_uri = None
+                self.persist()
+                self.storage_manager.create_document(self.code.text, name, finished)
+            else:
+                finished(False, result)
+
+        if self._saved_uri and not self._saved_uri.startswith("content://"):
+            # Əvvəlki versiyanın LocalRef mətnini bərpa etməyə çalışma.
+            self._saved_uri = None
+
         if self._saved_uri:
-            self.storage_manager.write_document(self._saved_uri, self.code.text, finished)
+            self.storage_manager.write_document(
+                self._saved_uri, self.code.text, updated_existing)
         else:
             self.storage_manager.create_document(self.code.text, name, finished)
 
