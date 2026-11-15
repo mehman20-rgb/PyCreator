@@ -48,22 +48,34 @@ class _AutoIndent:
 
 
 class CodeBox(_AutoIndent, _BASE):
-    """Bir toxunuşla kursoru yerləşdirir, iki toxunuşla yazı rejimini açır."""
+    """Bir toxunuşla görünən kursoru yerləşdirir, iki toxunuşla klaviaturanı açır."""
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos) and not self.readonly:
-            # Klaviatura artıq açıqdırsa, standart TextInput idarəetməsi işləsin.
-            # Fokus yoxdursa, ilk toxunuş yalnız kursoru yerləşdirsin.
-            if self.focus or getattr(touch, "is_double_tap", False):
-                return super().on_touch_down(touch)
-            self.cursor = self.get_cursor_from_xy(*touch.pos)
-            return False
+            if getattr(touch, "is_double_tap", False):
+                self.cursor = self.get_cursor_from_xy(*touch.pos)
+                self.focus = True
+                self.show_keyboard()
+                return True
+
+            # Managed rejimində fokus/kursor görünür, amma ilk toxunuş klaviaturanı açmır.
+            if self.keyboard_mode == "managed" and self._keyboard is None:
+                self.cursor = self.get_cursor_from_xy(*touch.pos)
+                self.focus = True
+                return False
         return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        # Klaviatura bağlı olanda toxunma hərəkətini ScrollView idarə etsin.
+        if self.keyboard_mode == "managed" and self.focus and self._keyboard is None:
+            return False
+        return super().on_touch_move(touch)
 
 
 def _make_code_box():
     # Tünd göy redaktor fonu; sintaksis rəngləri olduğu kimi saxlanılır.
     kw = dict(font_name=MONO, font_size=sp(14), do_wrap=False, cursor_color=ACCENT,
+              keyboard_mode="managed",
               background_color=(0.025, 0.04, 0.075, 1))
     if _HIGHLIGHT:
         kw.update(lexer=PythonLexer(), style_name="monokai")
