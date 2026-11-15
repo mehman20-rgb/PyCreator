@@ -4,8 +4,11 @@ import shutil
 
 
 class StorageManager:
+    PROMPT_MARKER = ".storage_permission_prompted"
+
     def __init__(self, data_dir):
         self.data_dir = data_dir
+        self.prompt_marker = os.path.join(data_dir, self.PROMPT_MARKER)
 
     def _android(self):
         try:
@@ -45,6 +48,7 @@ class StorageManager:
             return False
 
     def request_access(self):
+        """Android versiyasına uyğun sistem icazə ekranını açır."""
         activity, autoclass = self._android()
         if activity is None:
             return False
@@ -54,16 +58,48 @@ class StorageManager:
                 Intent = autoclass("android.content.Intent")
                 Settings = autoclass("android.provider.Settings")
                 Uri = autoclass("android.net.Uri")
+                package_uri = Uri.parse("package:" + activity.getPackageName())
                 intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                intent.setData(Uri.parse("package:" + activity.getPackageName()))
-                activity.startActivity(intent)
+                intent.setData(package_uri)
+                try:
+                    activity.startActivity(intent)
+                except Exception:
+                    # Bəzi Android ROM-larında tətbiqə aid action mövcud olmur.
+                    fallback = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                    activity.startActivity(fallback)
             else:
-                activity.requestPermissions(
-                    ["android.permission.READ_EXTERNAL_STORAGE",
-                     "android.permission.WRITE_EXTERNAL_STORAGE"], 4102)
+                # python-for-android-ın rəsmi runtime permission API-si.
+                from android.permissions import request_permissions
+                request_permissions([
+                    "android.permission.READ_EXTERNAL_STORAGE",
+                    "android.permission.WRITE_EXTERNAL_STORAGE",
+                ])
             return True
         except Exception:
             return False
+
+    def request_on_first_launch(self):
+        """İlk Android açılışında bir dəfə icazə sorğusu göndərir."""
+        if self._android()[0] is None:
+            return False
+        if self.has_access():
+            self._mark_prompted()
+            return False
+        if os.path.exists(self.prompt_marker):
+            return False
+        if self.request_access():
+            # İstifadəçi icazəni rədd etsə belə hər açılışda narahat edilmir.
+            self._mark_prompted()
+            return True
+        return False
+
+    def _mark_prompted(self):
+        try:
+            os.makedirs(self.data_dir, exist_ok=True)
+            with open(self.prompt_marker, "w", encoding="utf-8") as marker:
+                marker.write("1")
+        except OSError:
+            pass
 
     def prepare(self, old_dir=None):
         """İcazə varsa Download/PyProjects, yoxdursa tətbiqin daxili yaddaşı."""
