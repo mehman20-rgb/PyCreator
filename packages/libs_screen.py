@@ -16,6 +16,23 @@ from ui.theme import GREEN, MONO, MUTED, PANEL2, RED, Btn, make_label
 POPULAR = ["requests", "beautifulsoup4", "sympy", "rich", "colorama", "tabulate", "matplotlib", "tqdm", "python-dateutil", "pytz", "humanize", "emoji", "pyfiglet", "attrs"]
 SKIP_WORDS = {"pip", "pip3", "install", "-r", "-u", "--upgrade"}
 
+# Bunlar buildozer.spec / p4a-recipes vasitəsilə APK-yə yığılır.
+# Android-də runtime pip bunların native hissələrini quraşdıra bilməz.
+PREBUILT_PACKAGES = {
+    "pygame": "pygame",
+    "numpy": "numpy",
+    "opencv": "cv2",
+    "opencv-python": "cv2",
+    "opencv-python-headless": "cv2",
+    "matplotlib": "matplotlib",
+    "requests": "requests",
+    "beautifulsoup4": "bs4",
+    "sympy": "sympy",
+    "rich": "rich",
+    "colorama": "colorama",
+    "tabulate": "tabulate",
+}
+
 
 def parse_names(text):
     """'pip install requests==2.0, rich' -> ['requests', 'rich']"""
@@ -43,7 +60,8 @@ class LibsScreen(BoxLayout):
         self.add_widget(make_label(
             "Kitabxana adını yaz (bir neçə ad üçün boşluq və ya vergül işlət). "
             "Python-un hazır modulları (os, json, math, random...) quraşdırma tələb etmir. "
-            "numpy, opencv, pygame, matplotlib, requests, beautifulsoup4, sympy, rich, colorama və tabulate APK-yə build zamanı əlavə olunur; onları bu ekrandan pip ilə quraşdırma.",
+            "numpy, opencv, pygame, matplotlib, requests, beautifulsoup4, sympy, rich, colorama və tabulate APK-yə build zamanı əlavə olunur; onları bu ekrandan pip ilə quraşdırma. "
+            "Pygame test nümunəsi ekran yaratmadan Surface/Draw imkanlarını yoxlayır; ayrıca Pygame oyun pəncərəsi hazırda inteqrasiya edilməyib.",
             size=13, color=MUTED))
 
         row = BoxLayout(size_hint_y=None, height=dp(70), spacing=dp(6))
@@ -124,6 +142,24 @@ class LibsScreen(BoxLayout):
         if not names:
             self._say("Əvvəlcə kitabxana adını yaz.")
             return
+
+        # APK-də hazır native kitabxanaları pip-dən yenidən endirməyə çalışmırıq.
+        install_names = []
+        for name in names:
+            key = name.lower().replace("_", "-")
+            module = PREBUILT_PACKAGES.get(key)
+            if module:
+                self._say(
+                    "✓ %s APK-yə əvvəlcədən daxil edilib. "
+                    "Kodda import %s yaz; bu ekrandan pip quraşdırması lazım deyil."
+                    % (name, module))
+            else:
+                install_names.append(name)
+
+        self.field.text = ""
+        if not install_names:
+            return
+        names = install_names
         self.busy = True
         self.install_btn.disabled = True
         self.log.text = ""
