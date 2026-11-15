@@ -1,14 +1,18 @@
-"""Android üçün PyCreator layihə yaddaşı və icazə idarəetməsi."""
+"""PyCreator üçün daxili test faylları və Android sənəd seçicisi."""
 import os
 import shutil
 
 
 class StorageManager:
-    PROMPT_MARKER = ".storage_permission_prompted"
+    """Test fayllarını daxildə saxlayır, istifadəçi fayllarını SAF ilə ixrac edir."""
+
+    CREATE_DOCUMENT_REQUEST = 4817
 
     def __init__(self, data_dir):
         self.data_dir = data_dir
-        self.prompt_marker = os.path.join(data_dir, self.PROMPT_MARKER)
+        self.test_dir = os.path.join(data_dir, "TestFiles")
+        self._save_callback = None
+        self._activity_module = None
 
     def _android(self):
         try:
@@ -18,105 +22,93 @@ class StorageManager:
         except Exception:
             return None, None
 
-    def public_projects_dir(self):
-        activity, autoclass = self._android()
-        if activity is None:
-            return None
-        try:
-            env = autoclass("android.os.Environment")
-            root = env.getExternalStorageDirectory().getAbsolutePath()
-            return os.path.join(root, "Download", "PyProjects")
-        except Exception:
-            return None
-
     def has_access(self):
-        activity, autoclass = self._android()
-        if activity is None:
-            return False
-        try:
-            Build = autoclass("android.os.Build")
-            if Build.VERSION.SDK_INT >= 30:
-                env = autoclass("android.os.Environment")
-                return bool(env.isExternalStorageManager())
-            PackageManager = autoclass("android.content.pm.PackageManager")
-            read_ok = activity.checkSelfPermission(
-                "android.permission.READ_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED
-            write_ok = activity.checkSelfPermission(
-                "android.permission.WRITE_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED
-            return bool(read_ok and write_ok)
-        except Exception:
-            return False
-
-    def request_access(self):
-        """Android versiyasına uyğun sistem icazə ekranını açır."""
-        activity, autoclass = self._android()
-        if activity is None:
-            return False
-        try:
-            Build = autoclass("android.os.Build")
-            if Build.VERSION.SDK_INT >= 30:
-                Intent = autoclass("android.content.Intent")
-                Settings = autoclass("android.provider.Settings")
-                Uri = autoclass("android.net.Uri")
-                package_uri = Uri.parse("package:" + activity.getPackageName())
-                intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                intent.setData(package_uri)
-                try:
-                    activity.startActivity(intent)
-                except Exception:
-                    # Bəzi Android ROM-larında tətbiqə aid action mövcud olmur.
-                    fallback = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                    activity.startActivity(fallback)
-            else:
-                # python-for-android-ın rəsmi runtime permission API-si.
-                from android.permissions import request_permissions
-                request_permissions([
-                    "android.permission.READ_EXTERNAL_STORAGE",
-                    "android.permission.WRITE_EXTERNAL_STORAGE",
-                ])
-            return True
-        except Exception:
-            return False
-
-    def request_on_first_launch(self):
-        """İlk Android açılışında bir dəfə icazə sorğusu göndərir."""
-        if self._android()[0] is None:
-            return False
-        if self.has_access():
-            self._mark_prompted()
-            return False
-        if os.path.exists(self.prompt_marker):
-            return False
-        if self.request_access():
-            # İstifadəçi icazəni rədd etsə belə hər açılışda narahat edilmir.
-            self._mark_prompted()
-            return True
+        # SAF hər fayl üçün istifadəçinin seçdiyi URI-yə giriş verir.
         return False
 
-    def _mark_prompted(self):
-        try:
-            os.makedirs(self.data_dir, exist_ok=True)
-            with open(self.prompt_marker, "w", encoding="utf-8") as marker:
-                marker.write("1")
-        except OSError:
-            pass
+    def public_projects_dir(self):
+        # Artıq ümumi yaddaşa birbaşa yol istifadə edilmir.
+        return None
 
     def prepare(self, old_dir=None):
-        """İcazə varsa Download/PyProjects, yoxdursa tətbiqin daxili yaddaşı."""
-        public_dir = self.public_projects_dir()
-        if public_dir and self.has_access():
+        """Daxildə yalnız nümunə/test faylları üçün qovluq yaradır."""
+        os.makedirs(self.test_dir, exist_ok=True)
+        if old_dir and os.path.realpath(old_dir) != os.path.realpath(self.test_dir):
+            self._migrate(old_dir, self.test_dir)
+        return self.test_dir, False
+
+    def create_document(self, content, filename, callback):
+        """Android fayl seçicisini açır və seçilmiş sənədə UTF-8 mətn yazır."""
+        activity, autoclass = self._android()
+        if activity is None:
+            callback(False, "Android fayl seçicisi yalnız Android-də mövcuddur.")
+            return False
+        try:
+            from android import activity as android_activity
+            Intent = autoclass("android.content.Intent")
+            intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+            intent.addCategory(Intent.CATEGORY_OPENABLE)
+            intent.setType("text/x-python")
+            intent.putExtra(Intent.EXTRA_TITLE, filename or "untitled.py")
+
+            self._save_callback = callback
+            self._pending_content = content
+            self._activity_module = android_activity
+            android_activity.bind(on_activity_result=self._on_activity_result)
+            activity.startActivityForResult(intent, self.CREATE_DOCUMENT_REQUEST)
+            return True
+        except Exception as exc:
+            self._unbind_result()
+            self._save_callback = None
+            callback(False, str(exc))
+            return False
+
+    def _on_activity_result(self, request_code, result_code, intent):
+        if request_code != self.CREATE_DOCUMENT_REQUEST:
+            return
+        callback = self._save_callback
+        self._save_callback = None
+        try:
+            from jnius import autoclass
+            Activity = autoclass("android.app.Activity")
+            if result_code != Activity.RESULT_OK or intent is None:
+                if callback:
+                    callback(False, "Saxlama ləğv edildi.")
+                return
+            uri = intent.getData()
+            if uri is None:
+                if callback:
+                    callback(False, "Android fayl ünvanı qaytarmadı.")
+                return
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            activity = PythonActivity.mActivity
+            resolver = activity.getContentResolver()
+            stream = resolver.openOutputStream(uri)
+            if stream is None:
+                raise IOError("Faylı yazmaq üçün axın açıla bilmədi.")
+            Writer = autoclass("java.io.OutputStreamWriter")
+            writer = Writer(stream, "UTF-8")
             try:
-                os.makedirs(public_dir, exist_ok=True)
-                if old_dir and os.path.realpath(old_dir) != os.path.realpath(public_dir):
-                    self._migrate(old_dir, public_dir)
-                return public_dir, True
-            except OSError:
+                writer.write(self._pending_content)
+                writer.flush()
+            finally:
+                writer.close()
+            if callback:
+                callback(True, None)
+        except Exception as exc:
+            if callback:
+                callback(False, str(exc))
+        finally:
+            self._pending_content = None
+            self._unbind_result()
+
+    def _unbind_result(self):
+        if self._activity_module is not None:
+            try:
+                self._activity_module.unbind(on_activity_result=self._on_activity_result)
+            except Exception:
                 pass
-        fallback = os.path.join(self.data_dir, "PyProjects")
-        os.makedirs(fallback, exist_ok=True)
-        if old_dir and os.path.realpath(old_dir) != os.path.realpath(fallback):
-            self._migrate(old_dir, fallback)
-        return fallback, False
+            self._activity_module = None
 
     @staticmethod
     def _migrate(source, destination):
