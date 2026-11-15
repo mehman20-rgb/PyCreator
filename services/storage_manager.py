@@ -71,6 +71,7 @@ class StorageManager:
         try:
             from jnius import autoclass
             Activity = autoclass("android.app.Activity")
+            Intent = autoclass("android.content.Intent")
             if result_code != Activity.RESULT_OK or intent is None:
                 if callback:
                     callback(False, "Saxlama ləğv edildi.")
