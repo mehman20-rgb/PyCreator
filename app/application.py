@@ -11,8 +11,9 @@ from kivy.uix.screenmanager import NoTransition, Screen, ScreenManager
 from ui import theme
 from ui.theme import ACCENT, BG, PANEL2, Btn
 
-TABS = [("editor", "Redaktor"), ("qr", "QR Code"), ("libs", "Kitabxanalar"),
-        ("files", "Fayllar"), ("3d", "3D"), ("settings", "Settings")]
+TABS = [("editor", "Redaktor"), ("runner", "Runner"), ("qr", "QR Code"),
+        ("libs", "Kitabxanalar"), ("files", "Fayllar"), ("3d", "3D"),
+        ("settings", "Settings")]
 
 
 class PyCreatorApp(App):
@@ -79,6 +80,7 @@ class PyCreatorApp(App):
         self.tab_buttons = {}
         nav_icons = {
             "editor": "‹›",
+            "runner": ">_",
             "qr": "▦",
             "libs": "▤",
             "files": "▣",
@@ -94,7 +96,10 @@ class PyCreatorApp(App):
                 size_hint_x=1,
                 height=dp(52),
                 font_size=dp(24))
-            b.bind(on_release=lambda _w, n=name: self.switch(n))
+            if name == "runner":
+                b.bind(on_release=lambda *_: self.open_runner())
+            else:
+                b.bind(on_release=lambda _w, n=name: self.switch(n))
             self.tab_buttons[name] = b
             self.nav.add_widget(b)
         self.nav.add_widget(BoxLayout())
@@ -148,7 +153,7 @@ class PyCreatorApp(App):
 
     def switch(self, name):
         self.sm.current = name
-        immersive = name in ("runner", "turtle")
+        immersive = name == "turtle"
         self.nav.width = 0 if immersive else Window.width * 0.20
         self.nav.opacity = 0 if immersive else 1
         self.nav.disabled = immersive
@@ -160,6 +165,15 @@ class PyCreatorApp(App):
             self.editor.persist()
         if name == "settings":
             self.settings_page.refresh_storage()
+
+    def open_runner(self):
+        """Runner ilk dəfə boş açılır; sonrakı keçidlərdə kod yenidən başladılır."""
+        if self.editor.runner.running:
+            self.switch("runner")
+        elif self.editor.has_run_once:
+            self.editor.run()
+        else:
+            self.switch("runner")
 
     def _open_from_files(self, name):
         if self.editor.open_file(name):
