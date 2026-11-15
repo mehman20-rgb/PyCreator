@@ -110,7 +110,20 @@ class LibsScreen(BoxLayout):
     def refresh(self):
         self.listing.clear_widgets()
         items = self.pm.installed()
-        if not items:
+
+        # APK ilə gələn native kitabxanalar pip siyahısından ayrı göstərilir.
+        bundled = (
+            ("pygame", "pygame", "2.6.1"),
+            ("numpy", "numpy", "APK"),
+            ("opencv", "cv2", "APK"),
+            ("matplotlib", "matplotlib", "APK"),
+        )
+        for package, module, version in bundled:
+            self.listing.add_widget(make_label(
+                "✓ %s  %s  ·  import %s" % (package, version, module),
+                size=13, color=MUTED, height=30))
+
+        if not items and not bundled:
             self.listing.add_widget(make_label("Hələ heç nə quraşdırılmayıb.", size=14, color=MUTED))
             return
         for name, version in items:

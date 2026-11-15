@@ -64,7 +64,7 @@ py3d.set_rotation(25, 35, 0)
 py3d.show()
 print("PyCreator 3D səhnəsi hazırdır.")
 ''',
-    "pygame_test.py": '''# Pygame Android smoke test: Kivy ekranını əvəz etmədən Surface/Draw yoxlanılır
+    "pygame_surface_test.py": '''# Pygame Android smoke test: Kivy ekranını əvəz etmədən Surface/Draw yoxlanılır
 import pygame
 
 print("Pygame versiyası:", pygame.version.ver)
