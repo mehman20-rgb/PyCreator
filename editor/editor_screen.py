@@ -69,6 +69,7 @@ class EditorScreen(BoxLayout):
         self.data_dir = data_dir
         self.code_dir = code_dir
         self.name = None
+        self.has_run_once = False
         self._q = queue.Queue()
         self.runner = Runner(
             lambda text: self._q.put(("out", text)),
@@ -139,6 +140,7 @@ class EditorScreen(BoxLayout):
     def run(self):
         if self.runner.running:
             return
+        self.has_run_once = True
         self.persist()
         self.console.text = ""
         source = self.code.text
