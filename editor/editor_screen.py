@@ -63,11 +63,12 @@ def _make_code_box():
 
 
 class EditorScreen(BoxLayout):
-    def __init__(self, data_dir, code_dir, **kw):
+    def __init__(self, data_dir, code_dir, storage_manager=None, **kw):
         super().__init__(orientation="vertical", spacing=dp(6),
                          padding=(dp(8), dp(6)), **kw)
         self.data_dir = data_dir
         self.code_dir = code_dir
+        self.storage_manager = storage_manager
         self.name = None
         self.has_run_once = False
         self._q = queue.Queue()
@@ -251,9 +252,9 @@ class EditorScreen(BoxLayout):
             fh.write(self.code.text)
 
     def persist(self):
-        """Cari kodu qoruyur: adlı faylı yeniləyir, adsızı müvəqqəti fayla yazır."""
+        """İş sessiyasını daxili müvəqqəti faylda saxlayır; test faylını dəyişmir."""
         try:
-            self._write(self._path(self.name) if self.name else self._scratch())
+            self._write(self._scratch())
             with open(self._state(), "w", encoding="utf-8") as fh:
                 fh.write(self.name or "")
         except OSError:
@@ -266,29 +267,47 @@ class EditorScreen(BoxLayout):
                 name = fh.read().strip()
         except OSError:
             pass
-        path = self._path(name) if name else self._scratch()
         try:
-            with open(path, encoding="utf-8") as fh:
+            with open(self._scratch(), encoding="utf-8") as fh:
                 self.code.text = fh.read()
             self._set_name(name or None)
+            return
         except OSError:
-            self.code.text = STARTER
-            self._set_name(None)
+            pass
+        if name:
+            try:
+                with open(self._path(name), encoding="utf-8") as fh:
+                    self.code.text = fh.read()
+                self._set_name(name)
+                return
+            except OSError:
+                pass
+        self.code.text = STARTER
+        self._set_name(None)
 
     def save(self):
         if self.name:
-            self.persist()
-            self._append_status("Saxlandı: %s" % self.name)
+            self._save_as(self.name)
         else:
             dialogs.ask_text("Fayl adı", "məsələn: salam.py", "", self._save_as)
 
     def _save_as(self, name):
-        name = name.replace("/", "_").replace("\\", "_")
+        name = name.strip().replace("/", "_").replace("\\", "_")
+        if not name:
+            return
         if "." not in name:
             name += ".py"
-        self._set_name(name)
-        self.persist()
-        self._append_status("Saxlandı: %s" % name)
+        if self.storage_manager is None:
+            dialogs.info("Saxlama xətası", "Android fayl seçicisi qoşulmayıb.")
+            return
+        def finished(ok, error):
+            if ok:
+                self._set_name(name)
+                self.persist()
+                self._append_status("Telefon yaddaşında saxlandı: %s" % name)
+            else:
+                dialogs.info("Saxlama xətası", error or "Fayl saxlanmadı.")
+        self.storage_manager.create_document(self.code.text, name, finished)
 
     def _append_status(self, text):
         self.title.text = "%s  ✓ %s" % (("Fayl: %s" % self.name) if self.name else "Fayl", text)
