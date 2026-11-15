@@ -64,17 +64,17 @@ py3d.set_rotation(25, 35, 0)
 py3d.show()
 print("PyCreator 3D səhnəsi hazırdır.")
 ''',
-    "pygame_test.py": '''# Pygame Android test: ekran pəncərəsi açır
+    "pygame_test.py": '''# Pygame Android smoke test: Kivy ekranını əvəz etmədən Surface/Draw yoxlanılır
 import pygame
 
-pygame.init()
-screen = pygame.display.set_mode((640, 480))
-pygame.display.set_caption("PyCreator - Pygame")
-screen.fill((25, 35, 55))
-pygame.draw.circle(screen, (0, 200, 255), (320, 240), 70)
-pygame.display.flip()
 print("Pygame versiyası:", pygame.version.ver)
-print("Pəncərə yaradıldı.")
+surface = pygame.Surface((320, 200))
+surface.fill((25, 35, 55))
+pygame.draw.circle(surface, (0, 200, 255), (160, 100), 45)
+print("Surface ölçüsü:", surface.get_size())
+print("Mərkəz pikseli:", surface.get_at((160, 100)))
+print("Pygame import, Surface və Draw uğurla işləyir.")
+# Qeyd: pygame.display.set_mode()/event loop Kivy ilə hələ inteqrasiya edilməyib.
 ''',
     "beautifulsoup_test.py": '''# HTML mətnindən məlumat çıxarma
 from bs4 import BeautifulSoup
