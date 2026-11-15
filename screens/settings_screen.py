@@ -31,10 +31,7 @@ class SettingsScreen(BoxLayout):
         self.add_widget(self.storage_status)
         self.path_label = make_label("", size=11, color=MUTED)
         self.add_widget(self.path_label)
-        access_btn = Btn("Telefon yaddaşına giriş icazəsi", base=ACCENT)
-        access_btn.bind(on_release=lambda *_: self.request_storage_access())
-        self.add_widget(access_btn)
-        refresh_btn = Btn("Yaddaş qovluğunu yenilə")
+        refresh_btn = Btn("Yaddaş vəziyyətini yenilə")
         refresh_btn.bind(on_release=lambda *_: self.refresh_storage())
         self.add_widget(refresh_btn)
 
