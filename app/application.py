@@ -43,7 +43,7 @@ class PyCreatorApp(App):
         os.chdir(self.code_dir)
         self._seed_examples(data_dir)
 
-        self.editor = EditorScreen(data_dir, self.code_dir)
+        self.editor = EditorScreen(data_dir, self.code_dir, self.storage_manager)
         self.runner_page = RunnerScreen(self.editor, lambda: self.switch("editor"))
         self.turtle_page = TurtleScreen(lambda: self.switch("editor"))
         self.editor.turtle_canvas = self.turtle_page.canvas_widget
@@ -105,9 +105,6 @@ class PyCreatorApp(App):
         self.nav.add_widget(BoxLayout())
 
         self.switch("editor")
-        # İlk açılışda Android-in xüsusi yaddaş icazəsi səhifəsini göstər.
-        # Qısa gecikmə UI tam qurulduqdan sonra sistem Activity-sini açır.
-        Clock.schedule_once(lambda _dt: self.storage_manager.request_on_first_launch(), 1.0)
         Window.bind(on_keyboard=self._on_back)
         Clock.schedule_interval(lambda _dt: self.editor.persist(), 20)
         return root
