@@ -35,8 +35,12 @@ class PyCreatorApp(App):
         from tools.three_d_screen import ThreeDScreen
         from screens.settings_screen import SettingsScreen
         from services.storage_manager import StorageManager
+        from projects.project_manager import ProjectManager
 
         data_dir = self.user_data_dir
+        # ProjectManager özü root qovluğunu exist_ok ilə yaradır.
+        self.projects_dir = os.path.join(data_dir, "pyProject")
+        self.project_manager = ProjectManager(self.projects_dir)
         old_dir = self._legacy_code_dir(data_dir)
         self.storage_manager = StorageManager(data_dir)
         self.code_dir, self.public_storage = self.storage_manager.prepare(old_dir)
