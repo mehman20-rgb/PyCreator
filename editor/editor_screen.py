@@ -147,6 +147,13 @@ class EditorScreen(BoxLayout):
         grid = GridLayout(rows=1, size_hint_x=None, spacing=dp(4))
         grid.bind(minimum_width=grid.setter("width"))
 
+        # Mövcud Tab düyməsi birinci qalır.
+        label, symbol_text = SYMBOLS[0]
+        tab_button = Btn(label, base=PANEL2, size_hint_x=None,
+                         width=dp(54), height=dp(40))
+        tab_button.bind(on_release=lambda _w, t=symbol_text: self._insert(t))
+        grid.add_widget(tab_button)
+
         # Kompüterdəki Ctrl qısayollarının mobil qarşılığı.
         shortcuts = (
             ("Ctrl+Z", "undo"),
@@ -162,7 +169,7 @@ class EditorScreen(BoxLayout):
             button.bind(on_release=lambda _w, a=action: self._shortcut(a))
             grid.add_widget(button)
 
-        for label, text in SYMBOLS:
+        for label, text in SYMBOLS[1:]:
             button = Btn(label, base=PANEL2, size_hint_x=None,
                          width=dp(54), height=dp(40))
             button.bind(on_release=lambda _w, t=text: self._insert(t))
