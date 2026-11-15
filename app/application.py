@@ -68,17 +68,36 @@ class PyCreatorApp(App):
             screen.add_widget(widget)
             self.sm.add_widget(screen)
 
-        root = BoxLayout(orientation="vertical")
-        root.add_widget(self.sm)
-        nav = BoxLayout(size_hint_y=None, height=dp(52), spacing=dp(2))
-        self.nav = nav
+        # Sol tərəfdə yalnız ikonlardan ibarət şaquli naviqasiya paneli.
+        root = BoxLayout(orientation="horizontal", spacing=dp(4))
+        self.nav = BoxLayout(
+            orientation="vertical",
+            size_hint_x=None,
+            width=Window.width * 0.20,
+            spacing=dp(7),
+            padding=(dp(5), dp(10), dp(5), dp(8)))
         self.tab_buttons = {}
-        for name, label in TABS:
-            b = Btn(label, base=PANEL2, height=dp(52))
+        nav_icons = {
+            "editor": "‹›",
+            "qr": "▦",
+            "libs": "▤",
+            "files": "▣",
+            "3d": "◇",
+            "settings": "⚙",
+        }
+        root.add_widget(self.nav)
+        root.add_widget(self.sm)
+        for name, _label in TABS:
+            b = Btn(
+                nav_icons[name],
+                base=PANEL2,
+                size_hint_x=1,
+                height=dp(52),
+                font_size=dp(24))
             b.bind(on_release=lambda _w, n=name: self.switch(n))
             self.tab_buttons[name] = b
-            nav.add_widget(b)
-        root.add_widget(nav)
+            self.nav.add_widget(b)
+        self.nav.add_widget(BoxLayout())
 
         self.switch("editor")
         # İlk açılışda Android-in xüsusi yaddaş icazəsi səhifəsini göstər.
@@ -130,7 +149,7 @@ class PyCreatorApp(App):
     def switch(self, name):
         self.sm.current = name
         immersive = name in ("runner", "turtle")
-        self.nav.height = 0 if immersive else dp(52)
+        self.nav.width = 0 if immersive else Window.width * 0.20
         self.nav.opacity = 0 if immersive else 1
         self.nav.disabled = immersive
         for tab, button in self.tab_buttons.items():
