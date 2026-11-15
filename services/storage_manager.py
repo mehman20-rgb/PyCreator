@@ -48,8 +48,13 @@ class StorageManager:
             Intent = autoclass("android.content.Intent")
             intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             intent.addCategory(Intent.CATEGORY_OPENABLE)
-            intent.setType("text/plain")
+            # Python mənbə faylıdır; text/plain bəzi file provider-lərdə .txt əlavə edir.
+            intent.setType("text/x-python")
             intent.putExtra(Intent.EXTRA_TITLE, filename or "untitled.py")
+            intent.addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
 
             self._save_callback = callback
             self._pending_content = content
@@ -84,14 +89,25 @@ class StorageManager:
             PythonActivity = autoclass("org.kivy.android.PythonActivity")
             activity = PythonActivity.mActivity
             resolver = activity.getContentResolver()
+            uri_string = str(uri.toString())
+            if not uri_string.startswith("content://"):
+                raise ValueError("Android fayl seçicisi etibarlı content:// URI qaytarmadı.")
+
+            # SAF icazəsini mümkün olduqda tətbiqin növbəti açılışları üçün saxla.
             try:
                 flags = intent.getFlags()
-                grant_flags = flags & (Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                                       Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                resolver.takePersistableUriPermission(uri, grant_flags)
+                grant_flags = flags & (
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                if (grant_flags and
+                        flags & Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION):
+                    resolver.takePersistableUriPermission(uri, grant_flags)
             except Exception:
+                # Bəzi DocumentsProvider-lər persistable grant vermir;
+                # cari sessiyada yazmaq yenə də mümkün ola bilər.
                 pass
-            stream = resolver.openOutputStream(uri)
+
+            stream = resolver.openOutputStream(uri, "wt")
             if stream is None:
                 raise IOError("Faylı yazmaq üçün axın açıla bilmədi.")
             Writer = autoclass("java.io.OutputStreamWriter")
@@ -102,7 +118,9 @@ class StorageManager:
             finally:
                 writer.close()
             if callback:
-                callback(True, str(uri))
+                # str(uri) PyJNIus-da Java obyektinin LocalRef təsvirini verə bilər.
+                # toString() isə content://... URI mətnini qaytarır.
+                callback(True, uri_string)
         except Exception as exc:
             if callback:
                 callback(False, str(exc))
@@ -116,9 +134,14 @@ class StorageManager:
             activity, autoclass = self._android()
             if activity is None:
                 raise RuntimeError("Android sənəd xidməti əlçatan deyil.")
+            uri_string = str(uri_string or "").strip()
+            if not uri_string.startswith("content://"):
+                raise ValueError("Saxlanmış fayl ünvanı etibarsızdır; yenidən Save As edin.")
             Uri = autoclass("android.net.Uri")
             Writer = autoclass("java.io.OutputStreamWriter")
             uri = Uri.parse(uri_string)
+            if uri is None or str(uri.getScheme()) != "content":
+                raise ValueError("Saxlanmış Android content URI açıla bilmədi.")
             stream = activity.getContentResolver().openOutputStream(uri, "wt")
             if stream is None:
                 raise IOError("Sənəd yazmaq üçün açıla bilmədi.")
