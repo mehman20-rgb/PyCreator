@@ -81,6 +81,9 @@ class PyCreatorApp(App):
         root.add_widget(nav)
 
         self.switch("editor")
+        # İlk açılışda Android-in xüsusi yaddaş icazəsi səhifəsini göstər.
+        # Qısa gecikmə UI tam qurulduqdan sonra sistem Activity-sini açır.
+        Clock.schedule_once(lambda _dt: self.storage_manager.request_on_first_launch(), 1.0)
         Window.bind(on_keyboard=self._on_back)
         Clock.schedule_interval(lambda _dt: self.editor.persist(), 20)
         return root
