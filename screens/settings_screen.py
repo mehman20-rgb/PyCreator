@@ -41,11 +41,10 @@ class SettingsScreen(BoxLayout):
         self.refresh_storage()
 
     def refresh_storage(self):
-        allowed = self.storage_manager.has_access()
-        public_path = self.storage_manager.public_projects_dir()
-        self.storage_status.text = ("İcazə aktivdir — telefon yaddaşında saxlanılır."
-            if allowed else "İcazə yoxdur — hazırda tətbiqin daxili yaddaşından istifadə edilir.")
-        self.path_label.text = "Hədəf: %s" % (public_path or "Android yaddaşı əlçatan deyil")
+        self.storage_status.text = (
+            "Test faylları daxildə saxlanılır. Save zamanı Android fayl seçicisi açılır."
+        )
+        self.path_label.text = "Test qovluğu: %s" % self.storage_manager.test_dir
 
     def save(self):
         self.settings.update({"theme": self.theme_choice.text,
