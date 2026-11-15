@@ -69,6 +69,7 @@ class EditorScreen(BoxLayout):
         self.data_dir = data_dir
         self.code_dir = code_dir
         self.storage_manager = storage_manager
+        self._saved_uri = None
         self.name = None
         self.has_run_once = False
         self._q = queue.Queue()
@@ -257,6 +258,8 @@ class EditorScreen(BoxLayout):
             self._write(self._scratch())
             with open(self._state(), "w", encoding="utf-8") as fh:
                 fh.write(self.name or "")
+            with open(os.path.join(self.data_dir, ".external_uri"), "w", encoding="utf-8") as fh:
+                fh.write(self._saved_uri or "")
         except OSError:
             pass
 
@@ -267,6 +270,11 @@ class EditorScreen(BoxLayout):
                 name = fh.read().strip()
         except OSError:
             pass
+        try:
+            with open(os.path.join(self.data_dir, ".external_uri"), encoding="utf-8") as fh:
+                self._saved_uri = fh.read().strip() or None
+        except OSError:
+            self._saved_uri = None
         try:
             with open(self._scratch(), encoding="utf-8") as fh:
                 self.code.text = fh.read()
@@ -300,20 +308,25 @@ class EditorScreen(BoxLayout):
         if self.storage_manager is None:
             dialogs.info("Saxlama xətası", "Android fayl seçicisi qoşulmayıb.")
             return
-        def finished(ok, error):
+        def finished(ok, uri_or_error):
             if ok:
+                self._saved_uri = uri_or_error
                 self._set_name(name)
                 self.persist()
                 self._append_status("Telefon yaddaşında saxlandı: %s" % name)
             else:
-                dialogs.info("Saxlama xətası", error or "Fayl saxlanmadı.")
-        self.storage_manager.create_document(self.code.text, name, finished)
+                dialogs.info("Saxlama xətası", uri_or_error or "Fayl saxlanmadı.")
+        if self._saved_uri:
+            self.storage_manager.write_document(self._saved_uri, self.code.text, finished)
+        else:
+            self.storage_manager.create_document(self.code.text, name, finished)
 
     def _append_status(self, text):
         self.title.text = "%s  ✓ %s" % (("Fayl: %s" % self.name) if self.name else "Fayl", text)
 
     def new_file(self):
         self.persist()
+        self._saved_uri = None
         self._set_name(None)
         self.code.text = STARTER
         self.console.text = ""
@@ -328,6 +341,7 @@ class EditorScreen(BoxLayout):
             dialogs.info("Xəta", "Fayl açıla bilmədi: %s" % name)
             return False
         self.code.text = text
+        self._saved_uri = None
         self._set_name(name)
         self.console.text = ""
         self.persist()
