@@ -330,6 +330,7 @@ class EditorScreen(BoxLayout):
         self._set_name(None)
         self.code.text = STARTER
         self.console.text = ""
+        self.persist()
 
     def open_file(self, name):
         """Fayllar ekranından çağırılır."""
