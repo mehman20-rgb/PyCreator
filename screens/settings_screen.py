@@ -47,14 +47,6 @@ class SettingsScreen(BoxLayout):
             if allowed else "İcazə yoxdur — hazırda tətbiqin daxili yaddaşından istifadə edilir.")
         self.path_label.text = "Hədəf: %s" % (public_path or "Android yaddaşı əlçatan deyil")
 
-    def request_storage_access(self):
-        if not self.storage_manager.request_access():
-            self.storage_status.text = "İcazə səhifəsi açıla bilmədi. Android ayarlarından PyCreator üçün fayl girişini aktiv et."
-        else:
-            self.storage_status.text = "Açılan Android səhifəsində PyCreator üçün bütün fayllara giriş icazəsini aktiv et, sonra geri qayıt."
-        from kivy.clock import Clock
-        Clock.schedule_once(lambda _dt: self.refresh_storage(), 1.0)
-
     def save(self):
         self.settings.update({"theme": self.theme_choice.text,
                               "font_size": int(self.font_choice.text)})
