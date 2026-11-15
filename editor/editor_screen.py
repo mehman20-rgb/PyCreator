@@ -56,6 +56,8 @@ class CodeBox(_AutoIndent, _BASE):
                 self.cursor = self.get_cursor_from_xy(*touch.pos)
                 self.focus = True
                 self.show_keyboard()
+                # FocusBehavior toxunuş bitəndə widget-i defokuslamasın.
+                self.ignored_touch.append(touch)
                 return True
 
             # Managed rejimində fokus/kursor görünür, amma ilk toxunuş klaviaturanı açmır.
