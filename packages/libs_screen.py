@@ -13,7 +13,7 @@ from ui import dialogs
 from packages.pkgman import PackageManager, PkgError, parse_requirement
 from ui.theme import GREEN, MONO, MUTED, PANEL2, RED, Btn, make_label
 
-POPULAR = ["requests", "beautifulsoup4", "sympy", "rich", "colorama", "tabulate", "matplotlib", "tqdm", "python-dateutil", "pytz", "humanize", "emoji", "pyfiglet", "attrs"]
+POPULAR = ["pygame", "requests", "beautifulsoup4", "sympy", "rich", "colorama", "tabulate", "matplotlib", "tqdm", "python-dateutil", "pytz", "humanize", "emoji", "pyfiglet", "attrs"]
 SKIP_WORDS = {"pip", "pip3", "install", "-r", "-u", "--upgrade"}
 
 # Bunlar buildozer.spec / p4a-recipes vasitəsilə APK-yə yığılır.
@@ -156,6 +156,9 @@ class LibsScreen(BoxLayout):
             self._say("Əvvəlcə kitabxana adını yaz.")
             return
 
+        # Əvvəlki nəticələri təmizlə, sonra APK-də hazır kitabxanaların məlumatını göstər.
+        self.log.text = ""
+
         # APK-də hazır native kitabxanaları pip-dən yenidən endirməyə çalışmırıq.
         install_names = []
         for name in names:
@@ -175,7 +178,6 @@ class LibsScreen(BoxLayout):
         names = install_names
         self.busy = True
         self.install_btn.disabled = True
-        self.log.text = ""
         threading.Thread(target=self._work, args=(names,), daemon=True).start()
 
     def _work(self, names):

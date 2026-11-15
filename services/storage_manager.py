@@ -13,6 +13,7 @@ class StorageManager:
         self.test_dir = os.path.join(data_dir, "TestFiles")
         self._save_callback = None
         self._activity_module = None
+        self._pending_filename = None
 
     def _android(self):
         try:
@@ -58,6 +59,7 @@ class StorageManager:
 
             self._save_callback = callback
             self._pending_content = content
+            self._pending_filename = filename or "untitled.py"
             self._activity_module = android_activity
             android_activity.bind(on_activity_result=self._on_activity_result)
             activity.startActivityForResult(intent, self.CREATE_DOCUMENT_REQUEST)
@@ -107,6 +109,19 @@ class StorageManager:
                 # cari sessiyada yazmaq yenə də mümkün ola bilər.
                 pass
 
+            # Provider MIME tipinə görə .txt əlavə edibsə, mümkün olduqda
+            # seçilmiş .py adını DocumentsContract vasitəsilə bərpa et.
+            try:
+                DocumentsContract = autoclass("android.provider.DocumentsContract")
+                renamed_uri = DocumentsContract.renameDocument(
+                    resolver, uri, self._pending_filename)
+                if renamed_uri is not None:
+                    uri = renamed_uri
+                    uri_string = str(uri.toString())
+            except Exception:
+                # Bəzi provider-lər rename dəstəkləmir; MIME + EXTRA_TITLE qalır.
+                pass
+
             stream = resolver.openOutputStream(uri, "wt")
             if stream is None:
                 raise IOError("Faylı yazmaq üçün axın açıla bilmədi.")
@@ -126,6 +141,7 @@ class StorageManager:
                 callback(False, str(exc))
         finally:
             self._pending_content = None
+            self._pending_filename = None
             self._unbind_result()
 
     def write_document(self, uri_string, content, callback):
