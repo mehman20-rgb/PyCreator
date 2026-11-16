@@ -41,10 +41,18 @@ class SettingsScreen(BoxLayout):
         self.refresh_storage()
 
     def refresh_storage(self):
-        self.storage_status.text = (
-            "Test faylları daxildə saxlanılır. Save zamanı Android fayl seçicisi açılır."
-        )
-        self.path_label.text = "Test qovluğu: %s" % self.storage_manager.test_dir
+        if self.storage_manager.has_access():
+            self.storage_status.text = (
+                "Yaddaş icazəsi aktivdir. Python faylları avtomatik Download/pyProject "
+                "qovluğunda saxlanılır."
+            )
+            self.path_label.text = "Əsas qovluq: Download/pyProject"
+        else:
+            self.storage_status.text = (
+                "İlk Save zamanı Android qovluq seçicisi açılacaq. Download qovluğunu "
+                "seçdikdən sonra pyProject avtomatik yaradılacaq."
+            )
+            self.path_label.text = "Əsas qovluq: Download/pyProject (hələ qoşulmayıb)"
 
     def save(self):
         self.settings.update({"theme": self.theme_choice.text,
