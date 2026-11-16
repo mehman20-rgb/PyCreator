@@ -60,6 +60,7 @@ class PyCreatorApp(App):
         self.three_d = ThreeDScreen()
         self.editor.show_3d = lambda: self.switch("3d")
         self.files = FilesScreen(self.code_dir, self._open_from_files, self.editor.forget)
+        self.editor.on_saved = self.files.refresh
         self.settings_page = SettingsScreen(
             os.path.join(data_dir, "settings.json"), self.storage_manager,
             self._refresh_storage_location)
