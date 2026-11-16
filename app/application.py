@@ -38,8 +38,9 @@ class PyCreatorApp(App):
         from projects.project_manager import ProjectManager
 
         data_dir = self.user_data_dir
-        # ProjectManager özü root qovluğunu exist_ok ilə yaradır.
-        self.projects_dir = os.path.join(data_dir, "pyProject")
+        # Daxili layihə keşini ictimai Download/pyProject qovluğu ilə qarışdırmırıq.
+        # İstifadəçinin real layihə faylları StorageManager-in SAF qovluğunda saxlanır.
+        self.projects_dir = os.path.join(data_dir, "ProjectWorkspace")
         self.project_manager = ProjectManager(self.projects_dir)
         old_dir = self._legacy_code_dir(data_dir)
         self.storage_manager = StorageManager(data_dir)
