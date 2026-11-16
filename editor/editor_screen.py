@@ -249,23 +249,22 @@ class EditorScreen(BoxLayout):
     def run(self):
         if self.runner.running:
             return
+        self.console.text = ""
 
         # Android SAF resurslarını real fayl yollarına köçür:
         # cv2.imread("img.jpg"), open("data.txt"), pygame.image.load(...) işləsin.
         if self.storage_manager is not None:
             try:
                 synced = self.storage_manager.sync_project_to_local(self.code_dir)
-                if synced:
-                    self._append("[Layihə resursları sinxronlaşdırıldı: %d fayl]\\n" % len(synced))
             except Exception as exc:
-                self.console.text = ""
-                self._append("[Yaddaş sinxronizasiya xətası] %s\\n" % exc)
-                self._append("[Proqram başladılmadı: layihə faylları oxuna bilmədi.]\\n")
+                self.console.text = (
+                    "[Yaddaş sinxronizasiya xətası] %s\\n"
+                    "[Proqram başladılmadı: layihə faylları oxuna bilmədi.]"
+                ) % exc
                 return
 
         self.has_run_once = True
         self.persist()
-        self.console.text = ""
         source = self.code.text
         self._uses_turtle = ("import turtle" in source or "from turtle import" in source)
         self._uses_3d = ("import py3d" in source or "from py3d import" in source)
