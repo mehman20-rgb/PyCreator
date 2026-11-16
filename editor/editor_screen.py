@@ -9,6 +9,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
+from kivy.graphics import Color, Rectangle
 
 from ui import dialogs
 from core.runner import Runner
@@ -88,6 +89,10 @@ class EditorScreen(BoxLayout):
         self.data_dir = data_dir
         self.code_dir = code_dir
         self.storage_manager = storage_manager
+        with self.canvas.before:
+            Color(0.07, 0.08, 0.10, 1)
+            self._screen_bg = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self._sync_screen_bg, size=self._sync_screen_bg)
         self._saved_uri = None
         self.name = None
         self.has_run_once = False
@@ -101,22 +106,59 @@ class EditorScreen(BoxLayout):
         self._restore()
         Clock.schedule_interval(self._poll, 1.0 / 30.0)
 
+    def _sync_screen_bg(self, *_):
+        self._screen_bg.pos = self.pos
+        self._screen_bg.size = self.size
+
+    def show_manual_keyboard(self):
+        """Toolbar-dan Android yumşaq klaviaturasını əl ilə çağırır."""
+        self.code.focus = True
+        self.code._keyboard_requested = True
+        self.code.show_keyboard()
+
+    def open_external_file(self):
+        """Telefon yaddaşından mövcud .py faylını SAF ilə açır."""
+        if self.storage_manager is None:
+            dialogs.info("Açma xətası", "Android fayl seçicisi qoşulmayıb.")
+            return
+        def finished(ok, content, uri, filename):
+            if not ok:
+                dialogs.info("Fayl açılmadı", content)
+                return
+            if not str(filename or "").lower().endswith(".py"):
+                dialogs.info("Yanlış fayl", "Zəhmət olmasa .py Python faylı seç.")
+                return
+            self.persist()
+            self.code.text = content
+            self._saved_uri = uri
+            self._set_name(filename)
+            self.console.text = ""
+            self.persist()
+            self._resize_code_trigger()
+            if hasattr(self, "on_external_opened") and callable(self.on_external_opened):
+                self.on_external_opened()
+        self.storage_manager.open_document(finished)
+
     # ---------- quruluş ----------
     def _build(self):
         top = BoxLayout(size_hint_y=None, height=dp(42))
         top.add_widget(BoxLayout())
-        controls = BoxLayout(size_hint_x=None, width=dp(154), spacing=dp(4),
+        controls = BoxLayout(size_hint_x=None, width=dp(238), spacing=dp(4),
                              padding=dp(3))
         controls.canvas.before.clear()
         self.run_btn = Btn("▶", base=GREEN, size_hint_x=None, width=dp(38))
         self.stop_btn = Btn("■", base=RED, disabled=True, size_hint_x=None, width=dp(38))
         new_btn = Btn("+", size_hint_x=None, width=dp(34))
         save_btn = Btn("▣", size_hint_x=None, width=dp(34))
+        open_btn = Btn("📂", base=ACCENT, size_hint_x=None, width=dp(34))
+        keyboard_btn = Btn("⌨", base=PANEL2, size_hint_x=None, width=dp(34))
         self.run_btn.bind(on_release=lambda *_: self.run())
         self.stop_btn.bind(on_release=lambda *_: self.runner.stop())
         new_btn.bind(on_release=lambda *_: self.new_file())
         save_btn.bind(on_release=lambda *_: self.save())
-        for b in (self.run_btn, self.stop_btn, new_btn, save_btn):
+        open_btn.bind(on_release=lambda *_: self.open_external_file())
+        keyboard_btn.bind(on_release=lambda *_: self.show_manual_keyboard())
+        for b in (self.run_btn, self.stop_btn, new_btn, save_btn, open_btn, keyboard_btn):
             controls.add_widget(b)
         top.add_widget(controls)
         self.add_widget(top)
@@ -130,6 +172,11 @@ class EditorScreen(BoxLayout):
         self.editor_scroll = ScrollView(
             size_hint=(1, 1), do_scroll_x=True, do_scroll_y=True,
             bar_width=dp(3), scroll_type=["bars", "content"])
+        with self.editor_scroll.canvas.before:
+            Color(0.025, 0.04, 0.075, 1)
+            self._editor_bg = Rectangle(pos=self.editor_scroll.pos, size=self.editor_scroll.size)
+        self.editor_scroll.bind(pos=lambda w, _v: setattr(self._editor_bg, "pos", w.pos),
+                                size=lambda w, _v: setattr(self._editor_bg, "size", w.size))
         self.code = _make_code_box()
         self.code.size_hint = (None, None)
         self.editor_scroll.add_widget(self.code)
