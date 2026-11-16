@@ -7,6 +7,7 @@ class StorageManager:
     """İlk Save zamanı Download qovluğuna SAF icazəsi alır və pyProject yaradır."""
 
     TREE_REQUEST = 4817
+    OPEN_REQUEST = 4818
     TREE_URI_FILE = ".storage_tree_uri"
     PROJECT_URI_FILE = ".project_dir_uri"
 
@@ -14,6 +15,8 @@ class StorageManager:
         self.data_dir = data_dir
         self.test_dir = os.path.join(data_dir, "TestFiles")
         self._save_callback = None
+        self._open_callback = None
+        self._open_activity_module = None
         self._activity_module = None
         self._pending_filename = None
         self._pending_content = None
@@ -125,6 +128,101 @@ class StorageManager:
             self._unbind_result()
             self._finish(False, "Yaddaş qovluğu seçicisi açıla bilmədi: %s" % exc)
             return False
+
+    def open_document(self, callback):
+        """Android fayl seçicisindən mövcud Python faylını açır və URI icazəsini saxlayır."""
+        activity, autoclass = self._android()
+        if activity is None:
+            callback(False, "Android fayl seçicisi yalnız Android-də mövcuddur.", None, None)
+            return False
+        try:
+            from android import activity as android_activity
+            Intent = autoclass("android.content.Intent")
+            intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            intent.addCategory(Intent.CATEGORY_OPENABLE)
+            intent.setType("*/*")
+            intent.addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            self._open_callback = callback
+            self._open_activity_module = android_activity
+            android_activity.bind(on_activity_result=self._on_open_activity_result)
+            activity.startActivityForResult(intent, self.OPEN_REQUEST)
+            return True
+        except Exception as exc:
+            self._unbind_open_result()
+            callback(False, "Fayl seçicisi açıla bilmədi: %s" % exc, None, None)
+            return False
+
+    def _on_open_activity_result(self, request_code, result_code, intent):
+        if request_code != self.OPEN_REQUEST:
+            return
+        try:
+            from jnius import autoclass
+            Activity = autoclass("android.app.Activity")
+            Intent = autoclass("android.content.Intent")
+            if result_code != Activity.RESULT_OK or intent is None:
+                self._finish_open(False, "Fayl seçimi ləğv edildi.", None, None)
+                return
+            uri = intent.getData()
+            if uri is None:
+                raise IOError("Android fayl ünvanı qaytarmadı.")
+            activity = autoclass("org.kivy.android.PythonActivity").mActivity
+            resolver = activity.getContentResolver()
+            flags = intent.getFlags()
+            grant_flags = flags & (
+                Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            if grant_flags:
+                resolver.takePersistableUriPermission(uri, grant_flags)
+            stream = resolver.openInputStream(uri)
+            if stream is None:
+                raise IOError("Seçilmiş fayl oxuna bilmədi.")
+            raw = bytearray()
+            try:
+                while True:
+                    value = stream.read()
+                    if value < 0:
+                        break
+                    raw.append(value)
+            finally:
+                stream.close()
+            content = bytes(raw).decode("utf-8-sig")
+            display_name = "script.py"
+            try:
+                Documents = autoclass("android.provider.OpenableColumns")
+                cursor = resolver.query(uri, [Documents.DISPLAY_NAME], None, None, None)
+                if cursor is not None:
+                    try:
+                        if cursor.moveToFirst():
+                            index = cursor.getColumnIndex(Documents.DISPLAY_NAME)
+                            if index >= 0:
+                                display_name = str(cursor.getString(index))
+                    finally:
+                        cursor.close()
+            except Exception:
+                pass
+            self._finish_open(True, content, str(uri.toString()), display_name)
+        except Exception as exc:
+            self._finish_open(False, "Fayl açıla bilmədi: %s" % exc, None, None)
+        finally:
+            self._unbind_open_result()
+
+    def _finish_open(self, ok, content, uri, name):
+        callback = self._open_callback
+        self._open_callback = None
+        if callback:
+            callback(ok, content, uri, name)
+
+    def _unbind_open_result(self):
+        if self._open_activity_module is not None:
+            try:
+                self._open_activity_module.unbind(
+                    on_activity_result=self._on_open_activity_result)
+            except Exception:
+                pass
+            self._open_activity_module = None
 
     def _on_activity_result(self, request_code, result_code, intent):
         if request_code != self.TREE_REQUEST:
