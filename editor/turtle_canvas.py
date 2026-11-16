@@ -1,7 +1,7 @@
 """Turtle üçün ağ kətan; hərəkəti ardıcıl göstərir və Assets/turtle.jpg ikonunu dəstəkləyir."""
 import os
 from kivy.core.image import Image as CoreImage
-from kivy.graphics import Color, Ellipse, Line, Rectangle, PushMatrix, PopMatrix, Rotate
+from kivy.graphics import Color, Ellipse, Line, Rectangle, RoundedRectangle, PushMatrix, PopMatrix, Rotate
 from kivy.metrics import dp
 from kivy.uix.widget import Widget
 
@@ -35,6 +35,20 @@ class TurtleCanvas(Widget):
     def _point(self, point):
         return (self.center_x + dp(point[0]), self.center_y + dp(point[1]))
 
+    def apply_many(self, commands):
+        """Bir frame-də bütün Turtle əmrlərini tətbiq edib yalnız bir dəfə redraw et."""
+        for command in commands:
+            kind = command[0]
+            if kind == "clear":
+                self.items = []
+                if len(command) > 1 and command[1] is not None:
+                    self.bg = command[1]
+            elif kind in ("line", "dot"):
+                self.items.append(command)
+            elif kind == "turtle":
+                self.turtle = command[1:]
+        self.redraw()
+
     def redraw(self, *_args):
         self.canvas.clear()
         with self.canvas:
@@ -57,10 +71,18 @@ class TurtleCanvas(Widget):
                 if self.turtle_texture:
                     PushMatrix()
                     Rotate(angle=-float(self.turtle[2]), origin=(x, y))
+                    # Tünd, yumru çərçivə JPG-nin kvadrat künclərini gizlədir.
+                    Color(0.12, 0.16, 0.22, 1)
+                    RoundedRectangle(
+                        pos=(x - size / 2 - dp(1), y - size / 2 - dp(1)),
+                        size=(size + dp(2), size + dp(2)),
+                        radius=[dp(4)])
                     Color(1, 1, 1, 1)
-                    Rectangle(texture=self.turtle_texture,
-                              pos=(x - size / 2, y - size / 2),
-                              size=(size, size))
+                    RoundedRectangle(
+                        texture=self.turtle_texture,
+                        pos=(x - size / 2, y - size / 2),
+                        size=(size, size),
+                        radius=[dp(3)])
                     PopMatrix()
                 else:
                     Color(0.1, 0.1, 0.1, 1)
