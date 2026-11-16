@@ -226,6 +226,16 @@ class StorageManager:
         if file_uri is None:
             raise IOError("Python faylı pyProject qovluğunda yaradıla bilmədi.")
 
+        # Bəzi DocumentsProvider-lər MIME tipinə görə uzantını dəyişə bilər.
+        # Fayl adını dəqiq .py saxlamaq üçün rename əməliyyatını yoxla.
+        try:
+            renamed_uri = DocumentsContract.renameDocument(
+                resolver, file_uri, self._pending_filename)
+            if renamed_uri is not None:
+                file_uri = renamed_uri
+        except Exception:
+            pass
+
         uri_string = str(file_uri.toString())
         stream = resolver.openOutputStream(file_uri, "wt")
         if stream is None:
