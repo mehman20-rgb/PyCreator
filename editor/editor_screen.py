@@ -421,8 +421,19 @@ class EditorScreen(BoxLayout):
             if ok:
                 self._saved_uri = uri_or_error
                 self._set_name(name)
+
+                # SAF-dəki əsas nüsxə ilə yanaşı daxili iş nüsxəsini də sinxron saxla.
+                # Bu, PyCreator-un Fayllar siyahısının və mövcud iş axınının uyğun qalmasını təmin edir.
+                try:
+                    os.makedirs(self.code_dir, exist_ok=True)
+                    self._write(self._path(name))
+                except OSError:
+                    pass
+
                 self.persist()
-                self._append_status("Telefon yaddaşında saxlandı: %s" % name)
+                if hasattr(self, "on_saved") and callable(self.on_saved):
+                    self.on_saved()
+                self._append_status("Download/pyProject qovluğunda saxlandı: %s" % name)
             else:
                 dialogs.info("Saxlama xətası", uri_or_error or "Fayl saxlanmadı.")
 
