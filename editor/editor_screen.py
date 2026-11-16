@@ -55,6 +55,7 @@ class CodeBox(_AutoIndent, _BASE):
             if getattr(touch, "is_double_tap", False):
                 self.cursor = self.get_cursor_from_xy(*touch.pos)
                 self.focus = True
+                self._keyboard_requested = True
                 self.show_keyboard()
                 # FocusBehavior toxunuş bitəndə widget-i defokuslamasın.
                 self.ignored_touch.append(touch)
@@ -66,12 +67,6 @@ class CodeBox(_AutoIndent, _BASE):
                 self.focus = True
                 return False
         return super().on_touch_down(touch)
-
-    def on_touch_move(self, touch):
-        # Klaviatura bağlı olanda toxunma hərəkətini ScrollView idarə etsin.
-        if self.keyboard_mode == "managed" and self.focus and self._keyboard is None:
-            return False
-        return super().on_touch_move(touch)
 
 
 def _make_code_box():
@@ -96,6 +91,7 @@ class EditorScreen(BoxLayout):
         self._saved_uri = None
         self.name = None
         self.has_run_once = False
+        self._restore_keyboard_on_return = False
         self._q = queue.Queue()
         self.runner = Runner(
             lambda text: self._q.put(("out", text)),
@@ -245,6 +241,21 @@ class EditorScreen(BoxLayout):
         self.code.width = max(self.editor_scroll.width, content_width)
         self.code.height = max(self.editor_scroll.height, content_height)
 
+    def restore_editor_keyboard(self):
+        """Runner/Turtle səhifəsindən qayıdanda əvvəlki yazı rejimini bərpa et."""
+        if not self._restore_keyboard_on_return:
+            return
+        self._restore_keyboard_on_return = False
+
+        def reopen(_dt):
+            if not self.get_root_window():
+                return
+            self.code.focus = True
+            self.code._keyboard_requested = True
+            self.code.show_keyboard()
+
+        Clock.schedule_once(reopen, 0.22)
+
     # ---------- işə salma ----------
     def run(self):
         if self.runner.running:
@@ -270,7 +281,12 @@ class EditorScreen(BoxLayout):
         self._uses_3d = ("import py3d" in source or "from py3d import" in source)
         if self._uses_turtle and getattr(self, "turtle_terminal", None):
             self.turtle_terminal.text = ""
-        self.code.size_hint_y = 1
+        self._restore_keyboard_on_return = bool(
+            getattr(self.code, "_keyboard_requested", False))
+        # Editor ScrollView məzmunu mətn ölçüsünə görə hesablanmalıdır;
+        # size_hint_y=1 burada əlavə boş sahə yaradır.
+        self.code.size_hint = (None, None)
+        self._resize_code_trigger()
         if self._uses_turtle:
             turtle_api.reset()
         self._set_running(True)
@@ -326,9 +342,9 @@ class EditorScreen(BoxLayout):
                 self._flush(chunks)
                 self._finish(item[1], item[2])
         self._flush(chunks)
-        for command in turtle_api.drain_commands(limit=1):
-            if getattr(self, "turtle_canvas", None):
-                self.turtle_canvas.apply(command)
+        commands = turtle_api.drain_commands(limit=5000)
+        if commands and getattr(self, "turtle_canvas", None):
+            self.turtle_canvas.apply_many(commands)
 
     def _flush(self, chunks):
         if chunks:
@@ -346,6 +362,11 @@ class EditorScreen(BoxLayout):
         target.cursor = target.get_cursor_from_index(len(value))
 
     def _finish(self, status, secs):
+        if getattr(self, "_uses_turtle", False):
+            turtle_api.finish()
+            pending = turtle_api.drain_commands(limit=5000)
+            if pending and getattr(self, "turtle_canvas", None):
+                self.turtle_canvas.apply_many(pending)
         self._set_running(False)
         if status == "ok":
             self._append("\n[Bitdi · %.1f san]\n" % secs)
