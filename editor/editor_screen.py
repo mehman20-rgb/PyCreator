@@ -99,7 +99,7 @@ class EditorScreen(BoxLayout):
             lambda status, secs: self._q.put(("done", status, secs)))
         self._build()
         self._restore()
-        Clock.schedule_interval(self._poll, 0.05)
+        Clock.schedule_interval(self._poll, 1.0 / 30.0)
 
     # ---------- quruluş ----------
     def _build(self):
