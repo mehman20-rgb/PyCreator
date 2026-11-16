@@ -249,6 +249,96 @@ class StorageManager:
 
         self._finish(True, uri_string)
 
+    def sync_project_to_local(self, destination):
+        """SAF pyProject fayllarını Python-un adi fayl sistemi iş qovluğuna köçürür.
+
+        OpenCV imread(), open(), pygame.image.load() və digər kitabxanalar
+        content:// URI deyil, real fayl yolu tələb edir. Buna görə Run-dan
+        əvvəl layihənin resursları lokal runtime qovluğuna sinxronlaşdırılır.
+        """
+        if not self._project_uri:
+            return []
+
+        activity, autoclass = self._android()
+        if activity is None:
+            raise RuntimeError("Android fayl xidməti əlçatan deyil.")
+
+        Uri = autoclass("android.net.Uri")
+        DocumentsContract = autoclass("android.provider.DocumentsContract")
+        Document = autoclass("android.provider.DocumentsContract$Document")
+        resolver = activity.getContentResolver()
+        tree_uri = Uri.parse(self._tree_uri)
+        copied = []
+
+        def safe_name(value):
+            name = str(value or "").replace("\\\\", "/").split("/")[-1]
+            if name in ("", ".", ".."):
+                raise ValueError("Layihədə etibarsız fayl adı tapıldı.")
+            return name
+
+        def walk(parent_document_id, local_parent):
+            children_uri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                tree_uri, parent_document_id)
+            cursor = resolver.query(
+                children_uri,
+                [Document.COLUMN_DOCUMENT_ID, Document.COLUMN_DISPLAY_NAME,
+                 Document.COLUMN_MIME_TYPE],
+                None, None, None)
+            if cursor is None:
+                raise IOError("pyProject qovluğunun məzmunu oxuna bilmədi.")
+
+            try:
+                id_col = cursor.getColumnIndex(Document.COLUMN_DOCUMENT_ID)
+                name_col = cursor.getColumnIndex(Document.COLUMN_DISPLAY_NAME)
+                mime_col = cursor.getColumnIndex(Document.COLUMN_MIME_TYPE)
+                while cursor.moveToNext():
+                    doc_id = cursor.getString(id_col)
+                    name = safe_name(cursor.getString(name_col))
+                    mime = cursor.getString(mime_col)
+                    local_path = os.path.join(local_parent, name)
+
+                    if mime == Document.MIME_TYPE_DIR:
+                        os.makedirs(local_path, exist_ok=True)
+                        walk(doc_id, local_path)
+                        continue
+
+                    document_uri = DocumentsContract.buildDocumentUriUsingTree(
+                        tree_uri, doc_id)
+                    stream = resolver.openInputStream(document_uri)
+                    if stream is None:
+                        raise IOError("Fayl oxuna bilmədi: %s" % name)
+
+                    temporary = local_path + ".pycreator-tmp"
+                    try:
+                        # Java InputStream.read() bir bayt qaytarır (EOF = -1).
+                        # Beləliklə PyJNIus byte-array çevrilməsindən asılı olmuruq.
+                        with open(temporary, "wb") as output:
+                            while True:
+                                value = stream.read()
+                                if value < 0:
+                                    break
+                                output.write(bytes((value,)))
+                        os.replace(temporary, local_path)
+                        copied.append(local_path)
+                    finally:
+                        try:
+                            stream.close()
+                        except Exception:
+                            pass
+                        try:
+                            if os.path.exists(temporary):
+                                os.remove(temporary)
+                        except OSError:
+                            pass
+            finally:
+                cursor.close()
+
+        os.makedirs(destination, exist_ok=True)
+        root_id = DocumentsContract.getDocumentId(
+            Uri.parse(self._project_uri))
+        walk(root_id, destination)
+        return copied
+
     def write_document(self, uri_string, content, callback):
         """Əvvəl yaradılmış content:// sənədini yenidən yazır."""
         try:
