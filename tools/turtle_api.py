@@ -3,10 +3,21 @@ import math
 import queue
 
 _commands = queue.Queue()
+_last_turtle_state = (0.0, 0.0, 0.0, True)
 
 
 def _emit(command, *values):
+    global _last_turtle_state
+    if command == "turtle" and len(values) >= 4:
+        _last_turtle_state = (float(values[0]), float(values[1]),
+                              float(values[2]), bool(values[3]))
     _commands.put((command,) + values)
+
+
+def finish():
+    """Proqram bitəndə turtle ikonunu son mövqedə görünən et."""
+    x, y, heading, _visible = _last_turtle_state
+    _emit("turtle", x, y, heading, True)
 
 
 def drain_commands(limit=5000):
