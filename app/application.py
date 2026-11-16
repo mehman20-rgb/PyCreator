@@ -195,6 +195,11 @@ class PyCreatorApp(App):
 
     def switch(self, name):
         self.sm.current = name
+        if name == "editor":
+            # Screen aktivləşdikdən sonra klaviaturanı bərpa et; keçid zamanı
+            # Kivy-nin fokus/soft-keyboard vəziyyəti dəyişə bilər.
+            Clock.schedule_once(
+                lambda _dt: self.editor.restore_editor_keyboard(), 0.08)
         immersive = name == "turtle"
 
         # Səhifə seçildikdə drawer bağlanır; Turtle tam ekran rejimini saxlayır.
